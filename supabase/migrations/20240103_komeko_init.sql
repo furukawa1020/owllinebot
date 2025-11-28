@@ -5,7 +5,11 @@ create table if not exists users (
   id uuid primary key default gen_random_uuid(),
   line_user_id text unique not null,
   nickname text,
-  monthly_budget integer default 30000, -- Default 30000 yen
+  monthly_budget integer default 30000,
+  payday integer default 25, -- Day of month (1-31)
+  fixed_costs integer default 0, -- Rent, etc.
+  savings_goal integer default 0, -- Target savings
+  onboarding_status text default 'INIT', -- INIT, NAME, PAYDAY, INCOME, FIXED, SAVINGS, COMPLETE
   created_at timestamptz default now()
 );
 
