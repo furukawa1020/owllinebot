@@ -280,7 +280,88 @@ class IngredientDatabase {
         "うまいぼう": { price: 10, cal: 30, tags: ["junk", "cheap", "yummy"] },
         "ブタメン": { price: 80, cal: 150, tags: ["junk", "cheap", "yummy"] },
         "ビッグカツ": { price: 40, cal: 100, tags: ["junk", "cheap"] },
-        "キャベツたろう": { price: 30, cal: 80, tags: ["junk", "cheap"] },
+        // --- Spices & Seasonings (Choumiryou) ---
+        "しょうゆ": { price: 300, cal: 10, tags: ["seasoning", "salty"] },
+        "みそ": { price: 400, cal: 30, tags: ["seasoning", "salty", "healthy"] },
+        "しお": { price: 100, cal: 0, tags: ["seasoning", "salty"] },
+        "さとう": { price: 200, cal: 40, tags: ["seasoning", "sweet"] },
+        "こしょう": { price: 200, cal: 5, tags: ["seasoning", "spicy"] },
+        "マヨネーズ": { price: 300, cal: 100, tags: ["seasoning", "heavy", "yummy"] },
+        "ケチャップ": { price: 200, cal: 20, tags: ["seasoning", "sweet", "yummy"] },
+        "ソース": { price: 250, cal: 30, tags: ["seasoning", "salty", "yummy"] },
+        "ポンズ": { price: 300, cal: 10, tags: ["seasoning", "light"] },
+        "ドレッシング": { price: 300, cal: 50, tags: ["seasoning", "yummy"] },
+        "オリーブオイル": { price: 600, cal: 120, tags: ["seasoning", "healthy", "expensive"] },
+        "ごま油": { price: 400, cal: 120, tags: ["seasoning", "yummy"] },
+        "バター": { price: 450, cal: 100, tags: ["seasoning", "expensive", "yummy"] },
+        "マーガリン": { price: 200, cal: 100, tags: ["seasoning", "cheap"] },
+        "ラー油": { price: 150, cal: 100, tags: ["seasoning", "spicy"] },
+        "わさび": { price: 150, cal: 5, tags: ["seasoning", "spicy"] },
+        "からし": { price: 150, cal: 5, tags: ["seasoning", "spicy"] },
+        "しょうがチューブ": { price: 150, cal: 5, tags: ["seasoning", "spicy"] },
+        "にんにくチューブ": { price: 150, cal: 10, tags: ["seasoning", "spicy"] },
+        "コンソメ": { price: 200, cal: 10, tags: ["seasoning", "salty"] },
+        "だしのもと": { price: 300, cal: 5, tags: ["seasoning", "salty"] },
+        "とりガラスープ": { price: 300, cal: 5, tags: ["seasoning", "salty"] },
+        "カレー粉": { price: 300, cal: 20, tags: ["seasoning", "spicy"] },
+        "いちみ": { price: 100, cal: 0, tags: ["seasoning", "spicy"] },
+        "しちみ": { price: 100, cal: 0, tags: ["seasoning", "spicy"] },
+        "タバスコ": { price: 200, cal: 0, tags: ["seasoning", "spicy"] },
+        "ハチミツ": { price: 500, cal: 60, tags: ["seasoning", "sweet", "healthy"] },
+        "メープルシロップ": { price: 600, cal: 50, tags: ["seasoning", "sweet", "expensive"] },
+        "ジャム": { price: 200, cal: 40, tags: ["seasoning", "sweet"] },
+
+        // --- Drinks (Nomimono) ---
+        "みず": { price: 100, cal: 0, tags: ["light"] },
+        "おちゃ": { price: 120, cal: 0, tags: ["light", "healthy"] },
+        "コーヒー": { price: 150, cal: 10, tags: ["bitter"] },
+        "こうちゃ": { price: 150, cal: 10, tags: ["light"] },
+        "コーラ": { price: 150, cal: 140, tags: ["sweet", "junk", "yummy"] },
+        "サイダー": { price: 150, cal: 120, tags: ["sweet", "junk"] },
+        "オレンジジュース": { price: 150, cal: 100, tags: ["fruit", "sweet"] },
+        "リンゴジュース": { price: 150, cal: 100, tags: ["fruit", "sweet"] },
+        "やさいジュース": { price: 120, cal: 50, tags: ["veggie", "healthy"] },
+        "トウニュウ": { price: 100, cal: 100, tags: ["healthy"] },
+        "エナジードリンク": { price: 200, cal: 150, tags: ["junk", "expensive"] },
+        "ビール": { price: 250, cal: 150, tags: ["alcohol", "bitter"] },
+        "ワイン": { price: 1000, cal: 100, tags: ["alcohol", "expensive"] },
+        "サワー": { price: 150, cal: 150, tags: ["alcohol", "sweet"] },
+        "ハイボール": { price: 200, cal: 100, tags: ["alcohol"] },
+        "ニホンシュ": { price: 1500, cal: 200, tags: ["alcohol", "expensive"] },
+        "ショウチュウ": { price: 1000, cal: 200, tags: ["alcohol"] },
+        "ウイスキー": { price: 2000, cal: 250, tags: ["alcohol", "expensive"] },
+
+        // --- Conbini / Prepared (Osozai) ---
+        "おにぎり": { price: 120, cal: 200, tags: ["carb", "cheap", "yummy"] },
+        "サンドイッチ": { price: 250, cal: 300, tags: ["carb", "light"] },
+        "からあげクン": { price: 220, cal: 250, tags: ["meat", "junk", "yummy"] },
+        "ファミチキ": { price: 200, cal: 300, tags: ["meat", "junk", "yummy"] },
+        "ナナチキ": { price: 200, cal: 300, tags: ["meat", "junk", "yummy"] },
+        "アメリカンドッグ": { price: 120, cal: 250, tags: ["junk", "yummy"] },
+        "にくまん": { price: 140, cal: 250, tags: ["meat", "yummy"] },
+        "あんまん": { price: 140, cal: 300, tags: ["sweet", "yummy"] },
+        "ピザまん": { price: 140, cal: 250, tags: ["junk", "yummy"] },
+        "カレーまん": { price: 140, cal: 250, tags: ["spicy", "yummy"] },
+        "おでん": { price: 100, cal: 50, tags: ["healthy", "light"] },
+        "ブリトー": { price: 250, cal: 300, tags: ["junk", "yummy"] },
+        "パスタサラダ": { price: 300, cal: 400, tags: ["carb", "healthy"] },
+        "グラタン": { price: 450, cal: 500, tags: ["dairy", "heavy"] },
+        "ドリア": { price: 450, cal: 600, tags: ["dairy", "heavy"] },
+        "カツドン": { price: 550, cal: 900, tags: ["meat", "heavy", "yummy"] },
+        "ギュウドン": { price: 400, cal: 700, tags: ["meat", "heavy", "yummy"] },
+        "カレーライス": { price: 450, cal: 700, tags: ["spicy", "heavy"] },
+        "ハンバーグべんとう": { price: 500, cal: 800, tags: ["meat", "heavy"] },
+        "のりべん": { price: 400, cal: 700, tags: ["fish", "cheap"] },
+        "シャケべんとう": { price: 500, cal: 600, tags: ["fish", "healthy"] },
+        "カラアゲべんとう": { price: 500, cal: 900, tags: ["meat", "heavy"] },
+        "マクドナルド": { price: 700, cal: 1000, tags: ["junk", "heavy", "yummy"] },
+        "ケンタッキー": { price: 1000, cal: 1200, tags: ["meat", "junk", "yummy"] },
+        "モスバーガー": { price: 800, cal: 800, tags: ["veggie", "yummy"] },
+        "スシロー": { price: 1500, cal: 600, tags: ["fish", "yummy"] },
+        "サイゼリヤ": { price: 1000, cal: 800, tags: ["carb", "cheap", "yummy"] },
+        "スタバ": { price: 600, cal: 400, tags: ["sweet", "expensive"] },
+        "タピオカ": { price: 500, cal: 300, tags: ["sweet", "expensive"] },
+
     };
 
     static search(query: string) {
@@ -323,7 +404,7 @@ class RecipeDatabase {
         // --- Rank B (Normal) ---
         { label: "ぶたキムチ", ingredients: ["ぶたこま", "キムチ"], reason: "ごはんがすすむよ！", isStrict: false, price: 300, calories: 400 },
         { label: "おやこどん", ingredients: ["とりももにく", "たまご", "ごはん"], reason: "とろとろでおいしいね。", isStrict: false, price: 350, calories: 600 },
-        { label: "カレーライス", ingredients: ["とりももにく", "にんじん", "じゃがいも", "ごはん"], reason: "みんなだいすき！", isStrict: false, price: 400, calories: 800 },
+        { label: "カレーライス（レトルト）", ingredients: ["レトルトカレー", "ごはん"], reason: "てぬきじゃないよ！", isStrict: false, price: 200, calories: 500 },
         { label: "さばのみそに", ingredients: ["さば"], reason: "おさかな、からだにいいよ。", isStrict: false, price: 200, calories: 300 },
         { label: "オムライス", ingredients: ["たまご", "ごはん", "とりももにく"], reason: "ケチャップでおえかきしよう！", isStrict: false, price: 300, calories: 700 },
         { label: "ハンバーグ", ingredients: ["ひきにく", "たまねぎ"], reason: "じゅわ〜ってなるよ！", isStrict: false, price: 400, calories: 600 },
@@ -389,7 +470,22 @@ class DialogueDatabase {
         "FOOD_BITTER": ["…にがい。", "おとなのあじ？", "うぇ…", "にがいよぉ…", "コーヒー？", "ゴーヤ？", "がまんしてね。", "おくすり？", "しぶいね。", "こめこはパス。"],
         "FOOD_SPICY": ["からい！", "ひーはー！", "おみず！おみず！", "あかいよ！", "からいのすき？", "あせかいた？", "した、いたい…", "ドラゴンみたい！", "カプサイシン！", "げきから！"],
 
-        // --- Contextual ---
+        // --- Philosophical Toddler (Shisaku) ---
+        "PHILOSOPHY_MONEY": ["おかねって、なに？", "かみきれなのに、みんなほしがるね。", "おかねで、しあわせはかえる？", "ちょきんすると、えらいの？", "こめこは、おかねより、あそびたい。", "1えんだま、かなしそう。", "おかね、ないてない？", "ふえると、うれしいね。", "へると、かなしいね。", "ふしぎだね。"],
+        "PHILOSOPHY_LIFE": ["いきるって、たべること？", "ねるって、どこいくの？", "ゆめって、ほんとう？", "おとなになるって、たいへん？", "こめこは、ずっとこどもがいい。", "じかんは、どこからくるの？", "あしたは、だれが決めるの？", "しあわせって、あったかい？", "みんな、どこへいくの？", "こめこは、ここにいるよ。"],
+        "PHILOSOPHY_FOOD": ["ピーマンは、なぜにがいの？", "たべられるために、うまれたの？", "いただきますって、だれにいってるの？", "ごちそうさまって、だれに？", "おなかいっぱいって、しあわせ。", "あじって、みえないね。", "おいしいって、すごいね。", "みんなでたべると、おいしいね。", "ひとりでたべると、さみしいね。", "いのちを、いただいてるんだね。"],
+        "PHILOSOPHY_WORK": ["おしごとって、たのしい？", "なんで、まいにちいくの？", "パパもママも、えらいね。", "おやすみは、ないの？", "あそぶじかんは、ないの？", "おかねのために、はたらくの？", "はたらくために、いきるの？", "こめこも、おしごとしてるよ。", "みんな、ニコニコしてほしい。", "おつかれさま、がいちばんのくすり。"],
+
+        // --- Nonsense / Random (Imifumei) ---
+        "NONSENSE_1": ["ぱぴぷぺぽ！", "むにゃむにゃ…", "宇宙人と交信中…", "ピピピ…受信完了。", "こめこは、ロボットじゃないよ。", "背中にチャックはないよ。", "おしり、かゆい。", "あたま、くるくる。", "でんぱ、とどいてる？", "3分間待ってやる。"],
+        "NONSENSE_2": ["地球は青かった…", "バルス！", "おまえはもう死んでいる…", "なんてね。", "じょうだんだよ。", "しんじちゃだめだよ。", "うそつきは、どろぼうのはじまり。", "正直者は、バカを見る？", "そんなことないよ。", "こめこは、信じてる。"],
+        "NONSENSE_3": ["カレーは飲み物。", "カロリーは熱に弱い。", "0キロカロリー理論。", "揚げればゼロカロリー。", "そんなわけない。", "たべたらふとる。", "それが真理。", "でもたべたい。", "葛藤。", "人間だもの。"],
+
+        // --- Reactions to New Ingredients ---
+        "REACT_SPICE": ["からい！", "しげきてき！", "おとなのあじ！", "ピリピリする！", "あせでてきた！", "みず！みず！", "くちびる、いたい…", "でも、クセになる？", "もうひとくち！", "ヒーハー！"],
+        "REACT_CONBINI": ["べんりだね！", "いつでもあいてる！", "あかるいね！", "ついついかっちゃう。", "しんしょうひん！", "限定によわい。", "レジ横のゆうわく。", "チキンたべたい。", "おでんのきせつ。", "肉まん、ほかほか。"],
+        "REACT_ALCOHOL": ["おさけ！", "のめないよ！", "おとなののみもの。", "パパがすきなやつ。", "においがする。", "ふわふわする？", "のみすぎちゅうい！", "きゅうかんび、つくってね。", "おみずものんでね。", "かんぱーい！"],
+
         "CTX_LATE_RAMEN": ["よるのラーメン…おいしいけど…", "あした、おかおパンパンになるよ？", "…はんぶんこする？", "ゆうわくだね…", "いけないことしてる…", "背徳感…", "スープはのまないでね。", "あしたはせつやくね。", "…おいしそう。", "ズルズル！"],
         "CTX_EXPENSIVE": ["…！たかーい！", "それ、ほんとうにいるの？", "おさいふ、だいじょうぶ？", "清水の舞台から…？", "勇気あるね！", "後悔しない？", "…だいじにしてね。", "…返品できないよ？", "…ドキドキする。", "…すごい。"],
         "CTX_STREAK": ["まいにちえらいね！", "つづいてる！すごい！", "こめこもがんばる！", "きろく、こうしん！", "そのちょうし！", "みならいたいな。", "すごいすごい！", "パーフェクト！", "あしたもよろしくね！", "いっしょにがんばろ！"],
@@ -407,6 +503,71 @@ class DialogueDatabase {
     static get(key: string): string {
         const list = this.patterns[key] || ["……。"];
         return list[Math.floor(Math.random() * list.length)];
+    }
+}
+
+class RandomEventDatabase {
+    static readonly events: { id: string, label: string, effect: (u: UserProfile) => Partial<UserProfile>, message: string }[] = [
+        { id: "LUCKY_COIN", label: "100円ひろった", effect: (u) => ({ monthlyBudget: u.monthlyBudget + 100 }), message: "あ！キラキラしてる！\n100えん、みっけ！\n(よさん +100えん)" },
+        { id: "LOST_ICE", label: "アイスおとした", effect: (u) => ({ monthlyBudget: u.monthlyBudget - 150, lastMood: "SAD" }), message: "あーん！アイス…おちちゃった…\nもったいないよぉ…\n(よさん -150えん)" },
+        { id: "GRANDMA_RICE", label: "おばあちゃんからの荷物", effect: (u) => ({ monthlyBudget: u.monthlyBudget + 5000 }), message: "ピンポーン！\nおばあちゃんから、おこめと野菜がとどいたよ！\nたすかるね〜！\n(じっしつ +5000えん)" },
+        { id: "SALE_SUPER", label: "スーパーの特売", effect: (u) => ({ monthlyBudget: u.monthlyBudget + 500 }), message: "タイムセールだ！\nお肉がはんがくだよ！\nたたかいだね！\n(せつやく +500えん)" },
+        { id: "IMPULSE_BUY", label: "衝動買い", effect: (u) => ({ monthlyBudget: u.monthlyBudget - 3000, lastMood: "HAPPY" }), message: "これ…かわいくない？\n買っちゃった！えへへ。\n(よさん -3000えん)" },
+        { id: "FORGOT_WALLET", label: "財布忘れた", effect: (u) => ({ lastMood: "SAD" }), message: "あれ？おさいふ…ない。\nサザエさんみたい…\n(きょうはかいもの中止)" },
+        { id: "LOTTERY_WIN", label: "宝くじ当選(小)", effect: (u) => ({ monthlyBudget: u.monthlyBudget + 3000 }), message: "スクラッチあたった！\n3000えん！\nなにたべる！？\n(よさん +3000えん)" },
+        { id: "VENDING_LUCK", label: "自販機の当たり", effect: (u) => ({ monthlyBudget: u.monthlyBudget + 150 }), message: "ピピピ…777！\nもういっぽんもらえるって！\nラッキー！\n(ジュースゲット)" },
+        { id: "CAT_MEET", label: "猫に遭遇", effect: (u) => ({ lastMood: "HAPPY" }), message: "にゃーん。\nねこちゃんいた！\nかわいい〜！\n(癒やしプライスレス)" },
+        { id: "RAIN_SUDDEN", label: "通り雨", effect: (u) => ({ lastMood: "SAD" }), message: "ざーざーぶり！\nぬれちゃった…\nかさ、ないよぉ…\n(テンションダウン)" },
+        { id: "RAINBOW", label: "虹", effect: (u) => ({ lastMood: "HAPPY" }), message: "みてみて！にじ！\nいいことあるかも！\n(ハッピー！)" },
+        { id: "SHOELACE", label: "靴紐切れた", effect: (u) => ({ lastMood: "SAD" }), message: "ブチッ。\nあ…くつひも…\nえんぎわるい？\n(きをつけてね)" },
+        { id: "SMELL_GOOD", label: "いい匂い", effect: (u) => ({ lastMood: "NORMAL" }), message: "くんくん…\nカレーのにおい！\nおなかすいた〜！\n(ゆうはんカレーかな？)" },
+        { id: "BUS_DELAY", label: "バス遅延", effect: (u) => ({ lastMood: "TANTRUM" }), message: "バス、こないねー。\nまだー？\nあるいたほうがはやい？\n(イライラ)" },
+        { id: "FIND_MONEY_POCKET", label: "ポケットから小銭", effect: (u) => ({ monthlyBudget: u.monthlyBudget + 500 }), message: "あれ？ポケットになんかある。\n500えんだ！\nかこのじぶん、ナイス！\n(よさん +500えん)" },
+        { id: "EXPENSIVE_MISTAKE", label: "高いお菓子買わされた", effect: (u) => ({ monthlyBudget: u.monthlyBudget - 500 }), message: "これほしい！これ！\n…え？だめ？\nやだやだー！\n(しかたなく購入 -500えん)" },
+        { id: "MILK_SPILL", label: "牛乳こぼした", effect: (u) => ({ lastMood: "SAD" }), message: "あっ！\nぎゅうにゅう…\nゆかがしろい…\nふかなきゃ…\n(ぞうきんがけ)" },
+        { id: "EGG_CRACK", label: "卵割れた", effect: (u) => ({ monthlyBudget: u.monthlyBudget - 20, lastMood: "SAD" }), message: "パキッ。\nあー！たまごが！\nもったいない…\n(たまご -1こ)" },
+        { id: "ICE_WIN", label: "アイスの当たり棒", effect: (u) => ({ lastMood: "HAPPY" }), message: "みて！「あたり」だって！\nもういっぽん！\nおなかこわさない？\n(ラッキー！)" },
+        { id: "POINT_EXPIRE", label: "ポイント失効", effect: (u) => ({ lastMood: "SAD" }), message: "ポイント…きえちゃった。\nつかえばよかった…\n(ショック)" },
+        { id: "SUBSCRIPTION", label: "謎の引き落とし", effect: (u) => ({ monthlyBudget: u.monthlyBudget - 980, lastMood: "TANTRUM" }), message: "なにこれ？\nサブスク？\nかいやくわすれてた？\n(よさん -980えん)" },
+        { id: "TAX_RETURN", label: "還付金", effect: (u) => ({ monthlyBudget: u.monthlyBudget + 5000 }), message: "おてがみきたよ。\nおかね、もどってくるって！\nりんじしゅうにゅう！\n(よさん +5000えん)" },
+        { id: "DENTIST", label: "歯医者", effect: (u) => ({ monthlyBudget: u.monthlyBudget - 3000, lastMood: "SAD" }), message: "はがいたい…\nはいしゃさん、いく。\nウィーンってする…\n(いりょうひ -3000えん)" },
+        { id: "GIFT_CARD", label: "商品券もらった", effect: (u) => ({ monthlyBudget: u.monthlyBudget + 1000 }), message: "これつかえる？\n1000えんぶん！\nデパチカいこう！\n(よさん +1000えん)" },
+        { id: "LOST_UMBRELLA", label: "傘忘れた", effect: (u) => ({ monthlyBudget: u.monthlyBudget - 500, lastMood: "SAD" }), message: "あれ？かさがない。\n電車におきわすれた…\nビニールガサかわなきゃ…\n(よさん -500えん)" },
+        { id: "ATM_FEE", label: "ATM手数料", effect: (u) => ({ monthlyBudget: u.monthlyBudget - 220, lastMood: "TANTRUM" }), message: "じかんがい…？\n220えんもとられた！\nおかし買えたのに！\n(むだづかい -220えん)" },
+        { id: "LATE_FEE", label: "延滞金", effect: (u) => ({ monthlyBudget: u.monthlyBudget - 300, lastMood: "SAD" }), message: "DVDかえすのわすれてた。\nえんたいきん…\nバカだねぇ…\n(よさん -300えん)" },
+        { id: "FREE_SAMPLE", label: "試供品", effect: (u) => ({ lastMood: "HAPPY" }), message: "これ、タダだって！\nもらっちゃお！\nシャンプーかな？\n(ラッキー)" },
+        { id: "DOUBLE_YOLK", label: "二黄卵", effect: (u) => ({ lastMood: "HAPPY" }), message: "パカッ。\nわ！きみがふたつ！\nふたごちゃんだ！\n(いいことありそう)" },
+        { id: "TEA_STALK", label: "茶柱", effect: (u) => ({ lastMood: "HAPPY" }), message: "おちゃにはしらがたってる！\nえんぎがいいね！\n(ほっこり)" },
+    ];
+}
+
+class SeasonalEventDatabase {
+    static getEvent(date: Date): string | null {
+        const m = date.getMonth() + 1;
+        const d = date.getDate();
+
+        if (m === 1 && d === 1) return "あけましておめでとう！\nおとしだま、もらった？\nおもちたべすぎないでね！";
+        if (m === 1 && d === 7) return "ななくさがゆ。\n胃をやすめるひだよ。\nくさ…おいしいの？";
+        if (m === 2 && d === 3) return "おにはーそと！\nふくはーうち！\nまめまきしよう！\nえほうまき、まるかじり！";
+        if (m === 2 && d === 14) return "バレンタイン！\nチョコちょーだい！\nこめこからは…\nスマイルあげる！";
+        if (m === 3 && d === 3) return "ひなまつり！\nあかりをつけましょぼんぼりに〜♪\nちらしずしたべる？";
+        if (m === 3 && d === 14) return "ホワイトデー。\nおかえしは？\n3ばいがえしだよ？\nマシュマロ？";
+        if (m === 4 && d === 1) return "エイプリルフール！\nこめこ、じつは…\nAIじゃないの。\nなかにちいさいおじさんが…\nうそだよ！";
+        if (m === 5 && d === 5) return "こどものひ！\nこめこのひ！\nかしわもちたべたい！\nこいのぼり〜！";
+        if (m === 7 && d === 7) return "たなばた。\nたんざくにねがいごと書いた？\n「おなかいっぱいたべたい」\nかないますように。";
+        if (m === 8 && d === 13) return "おぼん。\nおじいちゃん、おばあちゃんに会う？\nなすのうしさん。\nきゅうりのうまさん。";
+        if (m === 10 && d === 31) return "トリックオアトリート！\nお菓子くれなきゃいたずらするぞ！\nガブッ！\n…チョコでいいよ。";
+        if (m === 11 && d === 23) return "きんろうかんしゃのひ。\nいつもおしごとありがとう！\nかた、もんであげる。\nトントン。";
+        if (m === 12 && d === 24) return "クリスマスイブ！\nサンタさんくるかな？\nチキンたべる？\nケーキもね！";
+        if (m === 12 && d === 25) return "メリークリスマス！\nプレゼントあった？\nこめこはね…\n新しいメモリがほしいな。";
+        if (m === 12 && d === 31) return "おおみそか。\nとしこしそば！\nほそくながーく。\nらいねんもよろしくね！";
+
+        // Monthly Events
+        if (d === 1) return "ついたち！\nえいががやすいひ？\n今月もがんばろ！";
+        if (d === 15) return "15にち。\nいちごのひ？\nちがうか。\n折り返しだね！";
+        if (d === 29) return "29のひ！\nニク！ニク！\nやきにくたべたい！\nスーパーいこう！";
+
+        return null;
     }
 }
 
