@@ -253,7 +253,7 @@ class IngredientDatabase {
         "ぶどう": { price: 400, cal: 100, tags: ["fruit", "expensive", "yummy"] },
         "もも": { price: 300, cal: 80, tags: ["fruit", "expensive", "yummy"] },
         "なし": { price: 200, cal: 80, tags: ["fruit", "yummy"] },
-        "かき": { price: 100, cal: 100, tags: ["fruit", "yummy"] },
+        "かき（果物）": { price: 100, cal: 100, tags: ["fruit", "yummy"] },
         "スイカ": { price: 500, cal: 100, tags: ["fruit", "light"] },
         "メロン": { price: 1000, cal: 100, tags: ["fruit", "expensive", "yummy"] },
         "キウイ": { price: 100, cal: 50, tags: ["fruit", "healthy"] },
@@ -293,7 +293,7 @@ class IngredientDatabase {
         "ドレッシング": { price: 300, cal: 50, tags: ["seasoning", "yummy"] },
         "オリーブオイル": { price: 600, cal: 120, tags: ["seasoning", "healthy", "expensive"] },
         "ごま油": { price: 400, cal: 120, tags: ["seasoning", "yummy"] },
-        "バター": { price: 450, cal: 100, tags: ["seasoning", "expensive", "yummy"] },
+        "バター（調味料）": { price: 450, cal: 100, tags: ["seasoning", "expensive", "yummy"] },
         "マーガリン": { price: 200, cal: 100, tags: ["seasoning", "cheap"] },
         "ラー油": { price: 150, cal: 100, tags: ["seasoning", "spicy"] },
         "わさび": { price: 150, cal: 5, tags: ["seasoning", "spicy"] },
@@ -439,6 +439,24 @@ class RecipeDatabase {
         { label: "ふぐ", ingredients: ["ふぐ"], reason: "プクプク！", isStrict: false, price: 8000, calories: 300 },
         { label: "カニなべ", ingredients: ["かに"], reason: "カニさん！", isStrict: false, price: 5000, calories: 400 },
         { label: "やきにく", ingredients: ["カルビ", "ロース", "タン"], reason: "ジュージュー！", isStrict: false, price: 5000, calories: 1000 },
+
+        // --- Rank SSS (Oil King / Dream) ---
+        { label: "きんぱくソフト", ingredients: ["アイス", "金箔"], reason: "キラキラしてる！", isStrict: false, price: 10000, calories: 300 },
+        { label: "シャトーブリアン", ingredients: ["ステーキ"], reason: "おにくの王様！", isStrict: false, price: 20000, calories: 600 },
+        { label: "キャビア", ingredients: ["キャビア"], reason: "くろいほうせき！", isStrict: false, price: 30000, calories: 50 },
+        { label: "トリュフパスタ", ingredients: ["パスタ", "トリュフ"], reason: "いいにおい〜！", isStrict: false, price: 15000, calories: 500 },
+        { label: "フカヒレ", ingredients: ["フカヒレ"], reason: "プルプル！", isStrict: false, price: 12000, calories: 300 },
+        { label: "プライベートジェット", ingredients: [], reason: "ごはんじゃないよ？", isStrict: false, price: 100000000, calories: 0 },
+        { label: "うちゅうりょこう", ingredients: [], reason: "ほしにねがいを。", isStrict: false, price: 5000000000, calories: 0 },
+
+        // --- Rank Z (Apocalypse / End) ---
+        { label: "ざっそう", ingredients: ["くさ"], reason: "よくあらってね。", isStrict: true, price: 0, calories: 5 },
+        { label: "ダンボール", ingredients: ["ダンボール"], reason: "食物繊維…？", isStrict: true, price: 0, calories: 10 },
+        { label: "どろだんご", ingredients: ["つち"], reason: "ピカピカにみがこう。", isStrict: true, price: 0, calories: 0 },
+        { label: "あまみず", ingredients: ["みず"], reason: "しぜんのめぐみ。", isStrict: true, price: 0, calories: 0 },
+        { label: "むし", ingredients: ["むし"], reason: "たんぱくしつ…", isStrict: true, price: 0, calories: 50 },
+        { label: "かす", ingredients: [], reason: "なにかののこり。", isStrict: true, price: 0, calories: 1 },
+        { label: "きぼう", ingredients: [], reason: "おなかはふくれないけど。", isStrict: true, price: 0, calories: 0 },
     ];
 }
 
@@ -856,6 +874,35 @@ class BotApp {
                 return;
             }
         }
+
+        // --- Event System Trigger ---
+        const today = new Date();
+        const seasonalMsg = SeasonalEventDatabase.getEvent(today);
+        let eventMsg: any = null;
+
+        // 5% Chance for Random Event
+        if (Math.random() < 0.05) {
+            const evt = RandomEventDatabase.events[Math.floor(Math.random() * RandomEventDatabase.events.length)];
+            const updates = evt.effect(user);
+            await this.userRepo.update(user.id, updates);
+            // Refresh user object
+            user = { ...user, ...updates } as UserProfile;
+            eventMsg = {
+                type: "flex", altText: "イベント発生！",
+                contents: {
+                    type: "bubble",
+                    body: {
+                        type: "box", layout: "vertical",
+                        contents: [
+                            { type: "text", text: "⚡ ハプニング！", weight: "bold", color: "#FF6961" },
+                            { type: "text", text: evt.label, size: "lg", weight: "bold", margin: "md" },
+                            { type: "text", text: evt.message, wrap: true, margin: "md", size: "sm", color: "#666666" }
+                        ]
+                    }
+                }
+            };
+        }
+        // -----------------------------
 
         let intent: ParsedIntent = { kind: "unknown" };
         if (text === "はじめる") intent = { kind: "start" };
