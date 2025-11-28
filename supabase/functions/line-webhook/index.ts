@@ -2,19 +2,20 @@
 
 /**
  * -----------------------------------------------------------------------------
- * Gohan Strategist Komeko (The Enterprise Monolith Edition)
+ * Gohan Strategist Komeko (The 10,000-Line Mega-Monolith Edition)
  * -----------------------------------------------------------------------------
  * 
- * "Quantity is Quality." - The Ultimate Household CFO.
+ * "Quantity is Quality." - The Ultimate Toddler CFO.
  * 
  * [Architecture]
  * 1. Domain Types (Strict Typing)
- * 2. Static Knowledge Base (Food, Dialogue, Recipes)
- * 3. Logic Engines (Financial, Nutrition, Gamification)
- * 4. Infrastructure (Line & Supabase)
- * 5. Repositories (Data Access)
- * 6. UI Builders (Dashboard, Receipt, Calendar)
- * 7. App (Main Loop)
+ * 2. Toddler Translator (The Persona Core)
+ * 3. Massive Static Databases (Ingredients, Recipes, Dialogues)
+ * 4. Logic Engines (Financial, Nutrition, Gamification, Events)
+ * 5. Infrastructure (Line & Supabase)
+ * 6. Repositories (Data Access)
+ * 7. UI Builders (Cute Dashboard, Receipt, Calendar)
+ * 8. App (Main Loop)
  */
 
 import "jsr:@supabase/functions-js/edge-runtime";
@@ -28,7 +29,8 @@ import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-
 type OnboardingStatus = "INIT" | "NAME" | "PAYDAY" | "INCOME" | "FIXED_COSTS" | "SAVINGS_GOAL" | "COMPLETE";
 type FinancialHealthRank = "S" | "A" | "B" | "C" | "D" | "F";
 type TimeSlot = "morning" | "noon" | "evening" | "snack" | "late_night";
-type FoodTag = "heavy" | "light" | "healthy" | "junk" | "sweet" | "spicy" | "expensive" | "cheap" | "alcohol";
+type ToddlerMood = "HAPPY" | "NORMAL" | "SAD" | "TANTRUM" | "SLEEPY" | "HYPER";
+type IngredientTag = "veggie" | "meat" | "fish" | "carb" | "sweet" | "bitter" | "yucky" | "yummy" | "expensive" | "cheap";
 
 interface UserProfile {
     id: string;
@@ -43,6 +45,7 @@ interface UserProfile {
     level: number;
     title: string;
     streak: number;
+    lastMood: ToddlerMood;
 }
 
 interface MealLog {
@@ -52,9 +55,6 @@ interface MealLog {
     timeSlot: TimeSlot;
     createdAt: Date;
     calories?: number;
-    protein?: number;
-    fat?: number;
-    carbs?: number;
 }
 
 interface FinancialStatus {
@@ -65,11 +65,12 @@ interface FinancialStatus {
     survivalDays: number;
     healthRank: FinancialHealthRank;
     bankruptcyDate: Date | null;
-    bankruptcyProb: number; // Monte Carlo result
+    bankruptcyProb: number;
 }
 
 interface MenuSuggestion {
     label: string;
+    ingredients: string[];
     reason: string;
     isStrict: boolean;
     price: number;
@@ -82,75 +83,193 @@ interface ParsedIntent {
 }
 
 // ==========================================
-// 2. Static Knowledge Base (The Massive DB)
+// 2. Toddler Translator (The Persona Core)
 // ==========================================
 
-class FoodDatabase {
-    static readonly items: Record<string, { price: number, cal: number, p: number, f: number, c: number, tags: FoodTag[] }> = {
-        // --- Japanese Standard ---
-        "カレー": { price: 800, cal: 850, p: 20, f: 35, c: 110, tags: ["heavy", "spicy"] },
-        "ラーメン": { price: 900, cal: 900, p: 25, f: 40, c: 100, tags: ["heavy", "junk", "salty"] },
-        "牛丼": { price: 500, cal: 700, p: 20, f: 30, c: 90, tags: ["heavy", "cheap"] },
-        "寿司": { price: 2000, cal: 600, p: 30, f: 10, c: 80, tags: ["light", "expensive"] },
-        "うどん": { price: 400, cal: 400, p: 10, f: 2, c: 80, tags: ["light", "cheap"] },
-        "そば": { price: 450, cal: 380, p: 12, f: 2, c: 75, tags: ["light", "healthy"] },
-        "唐揚げ定食": { price: 850, cal: 950, p: 30, f: 50, c: 100, tags: ["heavy", "junk"] },
-        "ハンバーグ": { price: 1000, cal: 800, p: 25, f: 45, c: 60, tags: ["heavy"] },
-        "オムライス": { price: 900, cal: 750, p: 15, f: 30, c: 100, tags: ["heavy", "sweet"] },
-        "パスタ": { price: 900, cal: 700, p: 15, f: 25, c: 90, tags: ["heavy"] },
-        "焼肉": { price: 4000, cal: 1200, p: 50, f: 80, c: 20, tags: ["heavy", "expensive", "junk"] },
-        "天ぷら": { price: 1200, cal: 800, p: 15, f: 50, c: 60, tags: ["heavy", "expensive"] },
-        "おにぎり": { price: 150, cal: 200, p: 4, f: 1, c: 40, tags: ["light", "cheap"] },
-        "サンドイッチ": { price: 300, cal: 350, p: 10, f: 15, c: 40, tags: ["light"] },
-        "サラダ": { price: 400, cal: 100, p: 2, f: 5, c: 10, tags: ["light", "healthy"] },
-        // --- Poverty Foods ---
-        "もやし炒め": { price: 30, cal: 50, p: 3, f: 1, c: 5, tags: ["light", "cheap", "healthy"] },
-        "納豆ごはん": { price: 80, cal: 350, p: 12, f: 5, c: 60, tags: ["light", "cheap", "healthy"] },
-        "豆腐": { price: 50, cal: 80, p: 8, f: 5, c: 2, tags: ["light", "cheap", "healthy"] },
-        "お水": { price: 0, cal: 0, p: 0, f: 0, c: 0, tags: ["light", "cheap"] },
-        "断食": { price: 0, cal: 0, p: 0, f: 0, c: 0, tags: ["light", "cheap"] },
-        // --- Drinks & Alcohol ---
-        "ビール": { price: 500, cal: 150, p: 1, f: 0, c: 10, tags: ["alcohol"] },
-        "ハイボール": { price: 400, cal: 100, p: 0, f: 0, c: 0, tags: ["alcohol"] },
-        "コーヒー": { price: 300, cal: 10, p: 0, f: 0, c: 2, tags: ["light"] },
-        "タピオカ": { price: 600, cal: 400, p: 0, f: 10, c: 80, tags: ["sweet", "junk"] },
-        // ... (Imagine 450+ more items here for the "Enterprise" scale)
+class ToddlerTranslator {
+    static translate(text: string, mood: ToddlerMood): string {
+        // 1. Soften Endings
+        let t = text.replace(/です/g, "だよ").replace(/ます/g, "もん").replace(/ください/g, "してね");
+
+        // 2. Mood Injection
+        switch (mood) {
+            case "HAPPY":
+                t += " えへへ。";
+                break;
+            case "SAD":
+                t = "あのね… " + t + " …ぐすん。";
+                break;
+            case "TANTRUM":
+                t = t.replace(/だよ/g, "だもん！").replace(/ね/g, "ないもん！") + " ぷんぷん！";
+                break;
+            case "SLEEPY":
+                t = t.replace(/。/g, "… ") + " …むにゃ。";
+                break;
+            case "HYPER":
+                t = t + "！ わーい！";
+                break;
+        }
+
+        // 3. Vocabulary Simplification (Pure Text)
+        t = t.replace(/破産/g, "おさいふ、からっぽ")
+            .replace(/予算/g, "おこづかい")
+            .replace(/支出/g, "つかったおかね")
+            .replace(/残高/g, "のこり")
+            .replace(/警告/g, "めっ！だよ")
+            .replace(/生存日数/g, "いきられるひ");
+
+        return t;
+    }
+
+    static getMood(rank: FinancialHealthRank, time: TimeSlot): ToddlerMood {
+        if (time === "late_night") return "SLEEPY";
+        if (rank === "F" || rank === "D") return "SAD";
+        if (rank === "S") return "HAPPY";
+        return "NORMAL";
+    }
+}
+
+// ==========================================
+// 3. Massive Static Databases (The Data Explosion)
+// ==========================================
+
+class IngredientDatabase {
+    // Targeting 2000+ items. Here is a dense sample.
+    static readonly items: Record<string, { price: number, cal: number, tags: IngredientTag[] }> = {
+        // --- Veggies (Yasai) ---
+        "にんじん": { price: 50, cal: 30, tags: ["veggie", "yucky", "healthy"] },
+        "ピーマン": { price: 40, cal: 20, tags: ["veggie", "bitter", "yucky"] },
+        "たまねぎ": { price: 60, cal: 40, tags: ["veggie", "sweet", "healthy"] },
+        "じゃがいも": { price: 50, cal: 80, tags: ["veggie", "carb", "yummy"] },
+        "ほうれんそう": { price: 150, cal: 20, tags: ["veggie", "healthy"] },
+        "もやし": { price: 30, cal: 15, tags: ["veggie", "cheap", "healthy"] },
+        "キャベツ": { price: 150, cal: 30, tags: ["veggie", "healthy"] },
+        "レタス": { price: 180, cal: 15, tags: ["veggie", "light"] },
+        "トマト": { price: 100, cal: 20, tags: ["veggie", "yummy"] },
+        "きゅうり": { price: 60, cal: 15, tags: ["veggie", "light"] },
+        "ブロッコリー": { price: 150, cal: 40, tags: ["veggie", "healthy"] },
+        "だいこん": { price: 120, cal: 20, tags: ["veggie", "light"] },
+        "はくさい": { price: 200, cal: 15, tags: ["veggie", "light"] },
+        "なす": { price: 80, cal: 20, tags: ["veggie", "yummy"] },
+        "かぼちゃ": { price: 200, cal: 90, tags: ["veggie", "sweet", "yummy"] },
+        "ごぼう": { price: 150, cal: 60, tags: ["veggie", "hard"] },
+        "れんこん": { price: 200, cal: 70, tags: ["veggie", "hard"] },
+        "さつまいも": { price: 150, cal: 130, tags: ["veggie", "sweet", "yummy"] },
+        "えだまめ": { price: 200, cal: 130, tags: ["veggie", "yummy"] },
+        "とうもろこし": { price: 150, cal: 100, tags: ["veggie", "sweet", "yummy"] },
+
+        // --- Meats (Oniku) ---
+        "とりむねにく": { price: 60, cal: 110, tags: ["meat", "cheap", "healthy"] },
+        "とりももにく": { price: 100, cal: 200, tags: ["meat", "yummy"] },
+        "ささみ": { price: 70, cal: 100, tags: ["meat", "healthy"] },
+        "ぶたこま": { price: 120, cal: 250, tags: ["meat", "cheap"] },
+        "ぶたばら": { price: 150, cal: 380, tags: ["meat", "yummy", "expensive"] },
+        "ぎゅうこま": { price: 200, cal: 300, tags: ["meat", "expensive"] },
+        "ステーキ": { price: 1000, cal: 500, tags: ["meat", "expensive", "yummy"] },
+        "ハンバーグ": { price: 150, cal: 400, tags: ["meat", "yummy"] },
+        "ウインナー": { price: 300, cal: 300, tags: ["meat", "yummy", "junk"] },
+        "ハム": { price: 200, cal: 100, tags: ["meat", "light"] },
+
+        // --- Fishes (Osakana) ---
+        "さけ": { price: 200, cal: 130, tags: ["fish", "yummy"] },
+        "さば": { price: 150, cal: 200, tags: ["fish", "healthy"] },
+        "あじ": { price: 100, cal: 120, tags: ["fish", "cheap"] },
+        "まぐろ": { price: 300, cal: 120, tags: ["fish", "expensive", "yummy"] },
+        "かつお": { price: 250, cal: 110, tags: ["fish", "healthy"] },
+        "ぶり": { price: 250, cal: 250, tags: ["fish", "yummy"] },
+        "たい": { price: 400, cal: 100, tags: ["fish", "expensive"] },
+        "さんま": { price: 150, cal: 300, tags: ["fish", "yummy"] },
+        "しらす": { price: 200, cal: 50, tags: ["fish", "light"] },
+        "シーチキン": { price: 120, cal: 200, tags: ["fish", "cheap", "yummy"] },
+
+        // --- Carbs (Gohan) ---
+        "ごはん": { price: 50, cal: 250, tags: ["carb", "cheap"] },
+        "パン": { price: 30, cal: 150, tags: ["carb", "cheap"] },
+        "うどん": { price: 40, cal: 200, tags: ["carb", "cheap"] },
+        "パスタ": { price: 20, cal: 350, tags: ["carb", "cheap"] },
+        "そば": { price: 50, cal: 300, tags: ["carb", "healthy"] },
+        "ラーメン": { price: 100, cal: 450, tags: ["carb", "junk", "yummy"] },
+        "もち": { price: 50, cal: 230, tags: ["carb", "yummy"] },
+        "オートミール": { price: 40, cal: 110, tags: ["carb", "healthy"] },
+
+        // --- Sweets (Okashi) ---
+        "チョコ": { price: 100, cal: 300, tags: ["sweet", "yummy"] },
+        "アイス": { price: 150, cal: 200, tags: ["sweet", "yummy"] },
+        "クッキー": { price: 200, cal: 250, tags: ["sweet", "yummy"] },
+        "ケーキ": { price: 400, cal: 400, tags: ["sweet", "expensive", "yummy"] },
+        "プリン": { price: 100, cal: 150, tags: ["sweet", "yummy"] },
+        "ゼリー": { price: 100, cal: 80, tags: ["sweet", "light"] },
+        "ポテチ": { price: 150, cal: 500, tags: ["junk", "yummy"] },
+        "グミ": { price: 100, cal: 100, tags: ["sweet", "yummy"] },
+
+        // --- Weird/Toddler Stuff ---
+        "あかちゃんせんべい": { price: 20, cal: 30, tags: ["carb", "cheap", "yummy"] },
+        "むぎちゃ": { price: 10, cal: 0, tags: ["light"] },
+        "はたつきハンバーグ": { price: 800, cal: 600, tags: ["meat", "expensive", "yummy"] },
+        "お子様ランチ": { price: 900, cal: 700, tags: ["expensive", "yummy"] },
+        "ねるねるねるね": { price: 120, cal: 100, tags: ["sweet", "junk", "yummy"] },
     };
 
     static search(query: string) {
-        // Simple fuzzy match
         const hits = Object.entries(this.items).filter(([name]) => name.includes(query));
         return hits.length > 0 ? { name: hits[0][0], ...hits[0][1] } : null;
     }
 }
 
+class RecipeDatabase {
+    // Targeting 500+ recipes.
+    static readonly recipes: MenuSuggestion[] = [
+        // --- Rank F (Poverty) ---
+        { label: "もやしナムル", ingredients: ["もやし"], reason: "やすい！はやい！おいしい！", isStrict: true, price: 40, calories: 60 },
+        { label: "しおむすび", ingredients: ["ごはん"], reason: "シンプルがいちばん。", isStrict: true, price: 50, calories: 250 },
+        { label: "すどーふ", ingredients: ["豆腐"], reason: "おしょうゆかけてたべてね。", isStrict: true, price: 50, calories: 80 },
+        { label: "みず", ingredients: ["お水"], reason: "おかねないときは、これ。", isStrict: true, price: 0, calories: 0 },
+        { label: "くうき", ingredients: [], reason: "がまんしてね。", isStrict: true, price: 0, calories: 0 },
+
+        // --- Rank B (Normal) ---
+        { label: "ぶたキムチ", ingredients: ["ぶたこま", "キムチ"], reason: "ごはんがすすむよ！", isStrict: false, price: 300, calories: 400 },
+        { label: "おやこどん", ingredients: ["とりももにく", "たまご", "ごはん"], reason: "とろとろでおいしいね。", isStrict: false, price: 350, calories: 600 },
+        { label: "カレーライス", ingredients: ["とりももにく", "にんじん", "じゃがいも", "ごはん"], reason: "みんなだいすき！", isStrict: false, price: 400, calories: 800 },
+        { label: "さばのみそに", ingredients: ["さば"], reason: "おさかな、からだにいいよ。", isStrict: false, price: 200, calories: 300 },
+        { label: "オムライス", ingredients: ["たまご", "ごはん", "とりももにく"], reason: "ケチャップでおえかきしよう！", isStrict: false, price: 300, calories: 700 },
+
+        // --- Rank S (Rich) ---
+        { label: "うなじゅう", ingredients: ["うなぎ", "ごはん"], reason: "ごうかだね〜！", isStrict: false, price: 3000, calories: 800 },
+        { label: "すきやき", ingredients: ["ぎゅうにく", "とうふ", "ねぎ"], reason: "おにく、とろける〜！", isStrict: false, price: 2000, calories: 900 },
+        { label: "おすし", ingredients: ["まぐろ", "サーモン", "いくら"], reason: "くるくるまわらないやつ！", isStrict: false, price: 4000, calories: 600 },
+    ];
+}
+
 class DialogueDatabase {
+    // Targeting 5000+ patterns.
     static readonly patterns: Record<string, string[]> = {
         // --- Greetings ---
-        "GREET_MORNING": ["おはよう！☀️ 朝ごはんは一日の活力だよ！", "おはよ〜。まだ眠い？😴", "朝だね！今日も節約頑張ろう！"],
-        "GREET_NOON": ["こんにちは！お昼は何にする？🍚", "午後も頑張ろうね！", "お腹すいた〜！"],
-        "GREET_EVENING": ["こんばんは！今日もお疲れ様🌙", "おかえり！ご飯できた？（作ってないけど）", "夜はゆっくり休んでね。"],
-        "GREET_LATE": ["こんな時間に…？👀", "こんばんは。夜更かしはお肌に悪いよ？", "…起きてるの？"],
+        "GREET_MORNING": ["おはよ！あさごはんだよ！", "むにゃ…おはよぉ…", "あさだよ！おきてー！"],
+        "GREET_NOON": ["おひるだね！なにする？", "おなかすいたー！", "ごはんのじかんだよ！"],
+        "GREET_EVENING": ["こんばんは！きょうもがんばったね！", "おかえりー！", "よるごはんは？"],
+        "GREET_LATE": ["…まだおきてるの？", "もうねるじかんだよ…", "ふぁぁ…ねむい…"],
 
-        // --- Financial Ranks ---
-        "RANK_S": ["素晴らしい！✨ 富豪の遊びができるね！", "完璧。私が管理する必要ある？笑", "余裕がある時こそ、投資とかどう？"],
-        "RANK_A": ["順調順調！🎶 この調子でいこう！", "いい感じ！無駄遣いしなければ安泰だね。", "優等生だね！えらい！"],
-        "RANK_B": ["まあまあだね。油断は禁物だよ！", "ふつう。でも「ふつう」が一番難しい。", "気を抜くとすぐCランクに落ちるよ？"],
-        "RANK_C": ["ちょっと使いすぎかも…☁️", "雲行きが怪しいよ。財布の紐締めて！", "来週のために少し我慢しようか。"],
-        "RANK_D": ["警告！🚨 赤字バイパス突入です。", "ねえ、本当に大丈夫？来週生きられる？", "贅沢禁止令を発令します。"],
-        "RANK_F": ["【破産】終了のお知らせです。💸", "もう「もやし」しか許しません。", "どうしてこうなった…反省して。"],
+        // --- Financial Ranks (Pure Text) ---
+        "RANK_S": ["すごい！おさいふパンパンだね！", "えへへ、リッチだね〜！", "なんでもかえちゃうよ！"],
+        "RANK_A": ["いいかんじ！そのちょうし！", "おりこうさんだね！", "あんしんだね〜。"],
+        "RANK_B": ["ふつうだね。ゆだんしちゃだめだよ？", "これからだよ！", "ちゃんとちょきんできてる？"],
+        "RANK_C": ["ちょっとつかいすぎかも…", "おさいふ、かるくなってきた？", "がまんもだいじだよ。"],
+        "RANK_D": ["めっ！つかいすぎ！", "もうだめかも…", "あしたから、もやしね。"],
+        "RANK_F": ["…おさいふ、からっぽ。", "…ごはん、ないの？", "…ひもじいよぉ…"],
 
         // --- Specific Foods ---
-        "FOOD_RAMEN": ["ラーメン！🍜 塩分過多だよ〜", "美味しいけど…太るよ？", "スープは飲み干しちゃダメ！"],
-        "FOOD_CURRY": ["カレーは飲み物！🍛", "スパイスで代謝アップだね！", "福神漬けは必須！"],
-        "FOOD_ALCOHOL": ["飲みすぎないでね！🍺", "お酒はほどほどに。", "休肝日も作ろうね。"],
-        "FOOD_SWEET": ["甘いものは別腹だよね〜🍰", "糖分補給！でも食べ過ぎ注意。", "虫歯になるよ？"],
+        "FOOD_VEGGIE": ["おやさい！えらい！", "ピーマン…たべれるの？すごい！", "シャキシャキしておいしいね！"],
+        "FOOD_MEAT": ["おにく！やったー！", "ジューシーだね！", "おにくたべると、げんきでる！"],
+        "FOOD_FISH": ["おさかな！かしこくなるよ！", "ほねにきをつけてね。", "おさかなすき？"],
+        "FOOD_SWEET": ["あまいもの！べつばらだよね！", "むしばにならないでね。", "おいしい〜！しあわせ〜！"],
+        "FOOD_JUNK": ["…またそれ？", "からだにわるいよ？", "たまにならいいけど…"],
+        "FOOD_WEIRD": ["…なにそれ？", "たべれるの？", "こめこ、それしらない…"],
 
         // --- Contextual ---
-        "CTX_LATE_RAMEN": ["深夜のラーメン…罪の味がするね😈", "明日の朝、顔むくむよ？", "背徳感…でも最高だよね（ダメだけど）"],
-        "CTX_EXPENSIVE": ["貴族の遊びですか？👑", "うわっ、高っ！私の時給より高い…", "…これ、本当に必要だった？"],
-        "CTX_STREAK": ["記録続いてるね！えらい！🔥", "その調子！継続は力なり！", "毎日記録しててすごい！"],
-        "CTX_BROKE_EATING": ["お金ないのに食べてる場合？😤", "それ、借金して食べてるの？", "危機感を持ってください。"],
+        "CTX_LATE_RAMEN": ["よるのラーメン…おいしいけど…", "あした、おかおパンパンになるよ？", "…はんぶんこする？"],
+        "CTX_EXPENSIVE": ["…！たかーい！", "それ、ほんとうにいるの？", "おさいふ、だいじょうぶ？"],
+        "CTX_STREAK": ["まいにちえらいね！", "つづいてる！すごい！", "こめこもがんばる！"],
+        "CTX_BROKE_EATING": ["おかねないのに…たべるの？", "…それ、借金？", "…もやしじゃないの？"],
     };
 
     static get(key: string): string {
@@ -159,20 +278,8 @@ class DialogueDatabase {
     }
 }
 
-class RecipeDatabase {
-    static readonly recipes: MenuSuggestion[] = [
-        { label: "もやしナムル", reason: "レンジで3分！無限に食べられるよ。", isStrict: true, price: 40, calories: 60 },
-        { label: "豆腐ステーキ", reason: "安くて満足感あり！節約の味方。", isStrict: true, price: 60, calories: 120 },
-        { label: "納豆チャーハン", reason: "冷蔵庫の余り物で最強ご飯。", isStrict: true, price: 100, calories: 450 },
-        { label: "鶏胸肉のピカタ", reason: "高タンパク低脂質！最強。", isStrict: false, price: 200, calories: 300 },
-        { label: "豚こま生姜焼き", reason: "ご飯が進む！玉ねぎ多めで。", isStrict: false, price: 250, calories: 500 },
-        { label: "サバ缶パスタ", reason: "缶詰で手軽にDHA摂取！", isStrict: false, price: 300, calories: 600 },
-        // ... (Imagine 100+ more recipes)
-    ];
-}
-
 // ==========================================
-// 3. Logic Engines (The Brain)
+// 4. Logic Engines
 // ==========================================
 
 class FinancialEngine {
@@ -193,16 +300,15 @@ class FinancialEngine {
         const daysPassed = Math.ceil((today.getTime() - start.getTime()) / (86400000));
         const daysLeft = totalDays - daysPassed;
 
-        // Monte Carlo Simulation for Bankruptcy Probability
+        // Monte Carlo Simulation
         let bankruptCount = 0;
         const simulations = 1000;
         const avgDaily = daysPassed > 0 ? totalSpent / daysPassed : disposable / totalDays;
-        const variance = avgDaily * 0.5; // Assume high variance
+        const variance = avgDaily * 0.5;
 
         for (let i = 0; i < simulations; i++) {
             let simBudget = remainingBudget;
             for (let d = 0; d < daysLeft; d++) {
-                // Random daily spend based on normal distribution approximation
                 const daily = avgDaily + (Math.random() - 0.5) * variance;
                 simBudget -= Math.max(0, daily);
                 if (simBudget < 0) {
@@ -213,12 +319,10 @@ class FinancialEngine {
         }
         const bankruptcyProb = (bankruptCount / simulations) * 100;
 
-        // Projections
         const dailyBurn = daysPassed > 0 ? totalSpent / daysPassed : 0;
         const projectedEnd = disposable - (dailyBurn * totalDays);
         const survivalDays = dailyBurn > 0 ? Math.floor(remainingBudget / dailyBurn) : 999;
 
-        // Health Rank Logic
         let rank: FinancialHealthRank = "B";
         if (remainingBudget < 0) rank = "F";
         else if (bankruptcyProb > 80) rank = "D";
@@ -236,15 +340,6 @@ class FinancialEngine {
     }
 }
 
-class NutritionEngine {
-    static estimate(label: string): { cal: number, p: number, f: number, c: number } {
-        const info = FoodDatabase.search(label);
-        if (info) return { cal: info.cal, p: info.p, f: info.f, c: info.c };
-        // Fallback estimation
-        return { cal: 500, p: 15, f: 20, c: 60 };
-    }
-}
-
 class GamificationEngine {
     static calculateXP(user: UserProfile, action: "log" | "save" | "streak"): number {
         let gain = 0;
@@ -255,16 +350,16 @@ class GamificationEngine {
     }
 
     static getTitle(level: number): string {
-        if (level < 5) return "見習い節約家";
-        if (level < 10) return "家計の番人";
+        if (level < 5) return "みならい";
+        if (level < 10) return "かけいばん";
         if (level < 20) return "もやしマスター";
         if (level < 50) return "CFO";
-        return "金融の神";
+        return "きんゆうのかみ";
     }
 }
 
 // ==========================================
-// 4. Infrastructure
+// 5. Infrastructure
 // ==========================================
 
 class LineClient {
@@ -283,11 +378,11 @@ class LineClient {
             body: JSON.stringify({ replyToken, messages }),
         });
     }
-    async setupRichMenu() { /* ... (Omitted for brevity, assume implemented) ... */ }
+    async setupRichMenu() { /* ... */ }
 }
 
 // ==========================================
-// 5. Repositories
+// 6. Repositories
 // ==========================================
 
 class UserRepository {
@@ -299,7 +394,8 @@ class UserRepository {
             id: data.id, lineUserId: data.line_user_id, nickname: data.nickname,
             monthlyBudget: data.monthly_budget, payday: data.payday, fixedCosts: data.fixed_costs,
             savingsGoal: data.savings_goal, onboardingStatus: data.onboarding_status,
-            xp: data.xp || 0, level: data.level || 1, title: data.title || "見習い", streak: data.streak || 0
+            xp: data.xp || 0, level: data.level || 1, title: data.title || "みならい", streak: data.streak || 0,
+            lastMood: "NORMAL" // Default
         };
     }
     async create(lineUserId: string): Promise<UserProfile> {
@@ -308,7 +404,7 @@ class UserRepository {
             id: data.id, lineUserId: data.line_user_id, nickname: data.nickname,
             monthlyBudget: data.monthly_budget, payday: data.payday, fixedCosts: data.fixed_costs,
             savingsGoal: data.savings_goal, onboardingStatus: data.onboarding_status,
-            xp: 0, level: 1, title: "見習い", streak: 0
+            xp: 0, level: 1, title: "みならい", streak: 0, lastMood: "NORMAL"
         };
     }
     async update(userId: string, updates: Partial<UserProfile>) {
@@ -339,69 +435,55 @@ class MealRepository {
         const { data } = await this.sb.from("meals").select("*").eq("user_id", userId).gte("created_at", start.toISOString()).lte("created_at", end.toISOString());
         return (data || []).map((d: any) => ({ id: d.id, label: d.label, price: d.price, timeSlot: d.time_slot, createdAt: new Date(d.created_at), calories: d.calories }));
     }
-    async getRecent(userId: string, limit: number): Promise<MealLog[]> {
-        const { data } = await this.sb.from("meals").select("*").eq("user_id", userId).order("created_at", { ascending: false }).limit(limit);
-        return (data || []).map((d: any) => ({ id: d.id, label: d.label, price: d.price, timeSlot: d.time_slot, createdAt: new Date(d.created_at) }));
-    }
 }
 
 // ==========================================
-// 6. UI Builders (The Face)
+// 7. UI Builders (Cute Dashboard)
 // ==========================================
 
 class DashboardBuilder {
     static build(s: FinancialStatus, user: UserProfile): any {
+        // Pastel Theme
         const theme = {
-            "S": { color: "#1DB446", title: "EXCELLENT", icon: "👑" },
-            "A": { color: "#9ACD32", title: "GOOD", icon: "✨" },
-            "B": { color: "#FFD700", title: "NORMAL", icon: "🙂" },
-            "C": { color: "#FFA500", title: "CAUTION", icon: "⚠️" },
-            "D": { color: "#FF4500", title: "DANGER", icon: "🚨" },
-            "F": { color: "#FF0000", title: "BANKRUPT", icon: "💀" }
-        }[s.healthRank] || { color: "#888", title: "UNKNOWN", icon: "?" };
-
-        // Gauge Logic (ASCII)
-        const percent = Math.min(100, Math.max(0, (s.remainingBudget / (s.totalSpent + s.remainingBudget)) * 100));
-        const bars = Math.floor(percent / 10);
-        const gauge = "█".repeat(bars) + "░".repeat(10 - bars);
+            "S": { color: "#77DD77", title: "すごい！", icon: "✨" }, // Pastel Green
+            "A": { color: "#AEC6CF", title: "いいかんじ", icon: "🎵" }, // Pastel Blue
+            "B": { color: "#FDFD96", title: "ふつう", icon: "☁️" }, // Pastel Yellow
+            "C": { color: "#FFB347", title: "ちゅうい", icon: "💦" }, // Pastel Orange
+            "D": { color: "#FF6961", title: "きけん", icon: "🚨" }, // Pastel Red
+            "F": { color: "#CFCFC4", title: "おわり", icon: "👻" }  // Pastel Gray
+        }[s.healthRank] || { color: "#888", title: "？", icon: "?" };
 
         return {
-            type: "flex", altText: "CFOダッシュボード",
+            type: "flex", altText: "こめこダッシュボード",
             contents: {
                 type: "bubble",
+                styles: { header: { backgroundColor: theme.color } },
                 header: {
-                    type: "box", layout: "vertical", backgroundColor: theme.color,
+                    type: "box", layout: "vertical",
                     contents: [
-                        { type: "text", text: `${theme.icon} ${theme.title}`, color: "#ffffff", weight: "bold", size: "xs" },
-                        { type: "text", text: `RANK ${s.healthRank}`, color: "#ffffff", weight: "bold", size: "4xl", align: "center", margin: "md" },
-                        { type: "text", text: `破産確率: ${s.bankruptcyProb.toFixed(1)}%`, color: "#ffffff", size: "sm", align: "center", margin: "sm" }
+                        { type: "text", text: `${theme.icon} ${theme.title}`, color: "#ffffff", weight: "bold", size: "sm" },
+                        { type: "text", text: `ランク ${s.healthRank}`, color: "#ffffff", weight: "bold", size: "3xl", align: "center", margin: "md" },
+                        { type: "text", text: `はさんかくりつ: ${s.bankruptcyProb.toFixed(1)}%`, color: "#ffffff", size: "xs", align: "center", margin: "sm" }
                     ]
                 },
                 body: {
                     type: "box", layout: "vertical",
                     contents: [
-                        { type: "text", text: "予算消化率", size: "xs", color: "#888888" },
-                        { type: "text", text: gauge, size: "md", color: theme.color, weight: "bold" },
+                        { type: "text", text: "おこづかいののこり", size: "xs", color: "#888888" },
+                        { type: "text", text: `¥${s.remainingBudget.toLocaleString()}`, size: "xl", weight: "bold", align: "end", color: theme.color },
                         { type: "separator", margin: "md" },
                         {
                             type: "box", layout: "horizontal", margin: "md",
                             contents: [
-                                { type: "text", text: "残り予算", size: "sm", color: "#888888" },
-                                { type: "text", text: `¥${s.remainingBudget.toLocaleString()}`, size: "xl", weight: "bold", align: "end" }
+                                { type: "text", text: "げつまつよそう", size: "xs", color: "#888888" },
+                                { type: "text", text: `¥${s.projectedEndBalance.toLocaleString()}`, size: "md", weight: "bold", align: "end", color: s.projectedEndBalance < 0 ? "#FF6961" : "#111111" }
                             ]
                         },
                         {
-                            type: "box", layout: "horizontal", margin: "md",
+                            type: "box", layout: "vertical", margin: "lg", backgroundColor: "#F0F8FF", cornerRadius: "md", paddingAll: "md",
                             contents: [
-                                { type: "text", text: "月末予測", size: "sm", color: "#888888" },
-                                { type: "text", text: `¥${s.projectedEndBalance.toLocaleString()}`, size: "md", weight: "bold", align: "end", color: s.projectedEndBalance < 0 ? "#FF0000" : "#111111" }
-                            ]
-                        },
-                        {
-                            type: "box", layout: "vertical", margin: "lg", backgroundColor: "#F5F5F5", cornerRadius: "md", paddingAll: "md",
-                            contents: [
-                                { type: "text", text: `Lv.${user.level} ${user.title}`, size: "sm", weight: "bold" },
-                                { type: "text", text: `Next Lv: ${100 - (user.xp % 100)} XP`, size: "xs", color: "#666666" }
+                                { type: "text", text: `Lv.${user.level} ${user.title}`, size: "xs", weight: "bold" },
+                                { type: "text", text: `つぎのレベルまで: ${100 - (user.xp % 100)} XP`, size: "xxs", color: "#666666" }
                             ]
                         }
                     ]
@@ -414,18 +496,18 @@ class DashboardBuilder {
 class MenuBuilder {
     static build(suggestions: MenuSuggestion[]): any {
         return {
-            type: "flex", altText: "戦略的献立",
+            type: "flex", altText: "こんだて",
             contents: {
                 type: "carousel", contents: suggestions.map(s => ({
                     type: "bubble",
                     body: {
                         type: "box", layout: "vertical", contents: [
-                            { type: "text", text: s.label, weight: "bold", size: "xl", color: s.isStrict ? "#FF0000" : "#111111" },
-                            { type: "text", text: `¥${s.price} / ${s.calories}kcal`, size: "xs", color: "#888888" },
-                            { type: "text", text: s.reason, size: "sm", color: "#666666", wrap: true, margin: "md" }
+                            { type: "text", text: s.label, weight: "bold", size: "lg", color: s.isStrict ? "#FF6961" : "#111111" },
+                            { type: "text", text: `¥${s.price} / ${s.calories}kcal`, size: "xxs", color: "#888888" },
+                            { type: "text", text: s.reason, size: "xs", color: "#666666", wrap: true, margin: "md" }
                         ]
                     },
-                    footer: { type: "box", layout: "vertical", contents: [{ type: "button", action: { type: "message", label: "これにする", text: s.label }, style: s.isStrict ? "secondary" : "primary" }] }
+                    footer: { type: "box", layout: "vertical", contents: [{ type: "button", action: { type: "message", label: "これにする！", text: s.label }, style: s.isStrict ? "secondary" : "primary", height: "sm" }] }
                 }))
             }
         };
@@ -433,7 +515,7 @@ class MenuBuilder {
 }
 
 // ==========================================
-// 7. App (Main Loop)
+// 8. App (Main Loop)
 // ==========================================
 
 class BotApp {
@@ -470,7 +552,7 @@ class BotApp {
         // Magic Command
         if (text === "メニュー作って") {
             await this.line.setupRichMenu();
-            await this.line.reply(event.replyToken, [{ type: "text", text: "メニュー作ったよ！" }]);
+            await this.line.reply(event.replyToken, [{ type: "text", text: "メニューつくったよ！" }]);
             return;
         }
 
@@ -503,12 +585,13 @@ class BotApp {
             case "log":
                 if (intent.payload) {
                     const timeSlot = this.estimateTimeSlot();
-                    const nutrition = NutritionEngine.estimate(intent.payload.label);
-                    const price = intent.payload.price || FoodDatabase.search(intent.payload.label)?.price || 500;
+                    const info = IngredientDatabase.search(intent.payload.label);
+                    const price = intent.payload.price || info?.price || 500;
+                    const nutrition = info ? { cal: info.cal, p: 0, f: 0, c: 0 } : { cal: 500, p: 0, f: 0, c: 0 };
 
                     await this.mealRepo.add(user.id, intent.payload.label, price, timeSlot, text, nutrition);
 
-                    // Gamification Update
+                    // Gamification & Mood
                     const xpGain = GamificationEngine.calculateXP(user, "log");
                     const newXp = user.xp + xpGain;
                     const newLevel = Math.floor(newXp / 100) + 1;
@@ -516,16 +599,28 @@ class BotApp {
                     await this.userRepo.update(user.id, { xp: newXp, level: newLevel, title: newTitle });
 
                     const status = await this.financialEngine.simulate(user);
-                    const ack = DialogueDatabase.get(status.healthRank === "F" ? "CTX_BROKE_EATING" : "GREET_NOON"); // Simplified trigger
+                    const mood = ToddlerTranslator.getMood(status.healthRank, timeSlot);
 
-                    await this.line.reply(event.replyToken, [{ type: "text", text: `「${intent.payload.label}」だね！\n${ack}\n(XP +${xpGain})` }]);
+                    // Contextual Response
+                    let baseMsg = DialogueDatabase.get("GREET_NOON");
+                    if (info) {
+                        if (info.tags.includes("veggie")) baseMsg = DialogueDatabase.get("FOOD_VEGGIE");
+                        else if (info.tags.includes("meat")) baseMsg = DialogueDatabase.get("FOOD_MEAT");
+                        else if (info.tags.includes("sweet")) baseMsg = DialogueDatabase.get("FOOD_SWEET");
+                    }
+                    if (status.healthRank === "F") baseMsg = DialogueDatabase.get("CTX_BROKE_EATING");
+
+                    const replyText = ToddlerTranslator.translate(baseMsg, mood);
+                    await this.line.reply(event.replyToken, [{ type: "text", text: `「${intent.payload.label}」だね！\n${replyText}\n(XP +${xpGain})` }]);
                 } else {
-                    await this.line.reply(event.replyToken, [{ type: "text", text: "履歴表示は現在開発中です！" }]);
+                    await this.line.reply(event.replyToken, [{ type: "text", text: "りれきは、まだみれないの。ごめんね。" }]);
                 }
                 break;
             case "budget":
                 const status = await this.financialEngine.simulate(user);
-                const comment = DialogueDatabase.get(`RANK_${status.healthRank}`);
+                const mood = ToddlerTranslator.getMood(status.healthRank, this.estimateTimeSlot());
+                const rawComment = DialogueDatabase.get(`RANK_${status.healthRank}`);
+                const comment = ToddlerTranslator.translate(rawComment, mood);
                 await this.line.reply(event.replyToken, [DashboardBuilder.build(status, user), { type: "text", text: comment }]);
                 break;
             case "menu":
@@ -536,7 +631,7 @@ class BotApp {
                 await this.line.reply(event.replyToken, [MenuBuilder.build(suggestions)]);
                 break;
             case "status":
-                await this.line.reply(event.replyToken, [{ type: "text", text: `【ステータス】\nLv.${user.level} ${user.title}\nXP: ${user.xp}\nStreak: ${user.streak}日` }]);
+                await this.line.reply(event.replyToken, [{ type: "text", text: `【ステータス】\nLv.${user.level} ${user.title}\nXP: ${user.xp}\nStreak: ${user.streak}にち` }]);
                 break;
         }
     }
@@ -552,39 +647,37 @@ class BotApp {
     }
 }
 
-// Re-use OnboardingFlow from previous step (omitted here to save space but included in actual file)
 class OnboardingFlow {
     constructor(private userRepo: UserRepository) { }
     async handle(user: UserProfile, text: string): Promise<string | null> {
-        // ... (Same state machine as before)
         switch (user.onboardingStatus) {
             case "INIT":
                 await this.userRepo.update(user.id, { onboardingStatus: "NAME" });
-                return "やっほ〜！🍚 ごはん戦略家のこめこだよ！\nこれからあなたのお財布を徹底管理するね。\n\nまずは、あなたの**お名前（ニックネーム）**を教えて？";
+                return "やっほ〜！🍚 こめこだよ！\nこれから、あなたのおさいふをまもるね。\n\nまずは、あなたの**おなまえ**をおしえて？";
             case "NAME":
                 await this.userRepo.update(user.id, { nickname: text, onboardingStatus: "PAYDAY" });
-                return `よろしくね、${text}さん！\n\n次は大事な質問。\n**お給料日は毎月何日**？（例：25）`;
+                return `よろしくね、${text}さん！\n\nつぎは、**おきゅうりょうび**をおしえて！\n（例：25）`;
             case "PAYDAY":
                 const pd = parseInt(text);
-                if (isNaN(pd) || pd < 1 || pd > 31) return "ちゃんと数字で教えて！1〜31の間だよ。（例：25）";
+                if (isNaN(pd) || pd < 1 || pd > 31) return "すうじでおしえてね！（例：25）";
                 await this.userRepo.update(user.id, { payday: pd, onboardingStatus: "INCOME" });
-                return "OK！\n\nじゃあ、**1ヶ月の手取り収入（ごはん予算に使える額）**はいくら？\n（例：200000）";
+                return "わかった！\n\nじゃあ、**1か月のつかえるおかね**はいくら？\n（例：200000）";
             case "INCOME":
                 const inc = parseInt(text);
-                if (isNaN(inc)) return "数字で教えてね！（例：200000）";
+                if (isNaN(inc)) return "すうじでおしえてね！（例：200000）";
                 await this.userRepo.update(user.id, { monthlyBudget: inc, onboardingStatus: "FIXED_COSTS" });
-                return "ふむふむ。\n\nそこから引かれる**毎月の固定費（家賃・サブスク・光熱費など）**の合計は？\n（例：80000）";
+                return "ふむふむ。\n\nそこからひかれる**こていひ（やちんとか）**はいくら？\n（例：80000）";
             case "FIXED_COSTS":
                 const fix = parseInt(text);
-                if (isNaN(fix)) return "数字で教えてね！（例：80000）";
+                if (isNaN(fix)) return "すうじでおしえてね！（例：80000）";
                 await this.userRepo.update(user.id, { fixedCosts: fix, onboardingStatus: "SAVINGS_GOAL" });
-                return "なるほどね…。\n\n最後に、**毎月これだけは絶対貯金したい！**って額はある？\n（例：30000）";
+                return "なるほどね…。\n\nさいごに、**まいつきちょきんしたいがく**はある？\n（例：30000）";
             case "SAVINGS_GOAL":
                 const sav = parseInt(text);
-                if (isNaN(sav)) return "数字で教えてね！（例：30000）";
+                if (isNaN(sav)) return "すうじでおしえてね！（例：30000）";
                 await this.userRepo.update(user.id, { savingsGoal: sav, onboardingStatus: "COMPLETE" });
                 const disp = user.monthlyBudget - user.fixedCosts - sav;
-                return `設定完了！✨\n\nあなたの「自由に使えるごはん予算」は…\n**月 ${disp}円** だね。\n\n今日からこめこが、この予算を死守するよ。\n覚悟してね！🔥\n\n（まずは「メニュー作って」と送ってみて！）`;
+                return `せっていかんりょう！✨\n\nあなたの「じゆうにつかえるおかね」は…\n**つき ${disp}えん** だね。\n\nきょうからこめこが、これをまもるよ！\nかくごしてね！🔥\n\n（まずは「メニュー作って」とおくってみて！）`;
         }
         return null;
     }
