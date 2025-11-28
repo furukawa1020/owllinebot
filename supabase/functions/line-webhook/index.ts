@@ -2,14 +2,21 @@
 
 /**
  * -----------------------------------------------------------------------------
- * Yuru Work Log Bot "Biyori-san" (Ultimate Elderly-Friendly Edition)
+ * Gohan Fairy Komeko (The Monolith Edition)
  * -----------------------------------------------------------------------------
  * 
- * Features for "Grandparents":
- * 1. Rich Menu: Permanent buttons at the bottom (No typing needed).
- * 2. Quick Replies: Tap to select common tasks (Watering, Meds, etc.).
- * 3. Large Text UI: Flex Messages designed for high readability.
- * 4. Voice Memo Support: Handles audio files as logs.
+ * A single-file, enterprise-grade LINE Bot architecture.
+ * 
+ * [Table of Contents]
+ * 1. Domain Types
+ * 2. Infrastructure (Supabase & LINE)
+ * 3. Repositories (Data Access)
+ * 4. Services (Business Logic)
+ * 5. Persona Engine (Komeko)
+ * 6. UI Builder (Flex Messages)
+ * 7. Intent Parser (NLU)
+ * 8. Controller (Main Loop)
+ * 9. Entry Point
  */
 
 import "jsr:@supabase/functions-js/edge-runtime";
@@ -17,150 +24,240 @@ import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // ==========================================
-// [Layer 1] Types & Interfaces
+// 1. Domain Types
 // ==========================================
 
+// LINE Types
 type LineEvent = {
     type: string;
     replyToken?: string;
     source: { userId?: string; groupId?: string; roomId?: string };
-    message?: { type: "text" | "image" | "audio"; id: string; text: string };
-    postback?: { data: string };
+    message?: { type: "text"; id: string; text: string };
 };
 
-interface BotContext {
-    groupId: string;
-    groupDbId: string;
-    memberDbId: string;
-    displayName: string | null;
+// App Types
+type TimeSlot = "morning" | "noon" | "evening" | "snack";
+type MoodType = "light" | "heavy" | "eatout" | "saving" | "anything";
+
+interface UserProfile {
+    id: string;
+    lineUserId: string;
+    nickname: string | null;
+    monthlyBudget: number;
+}
+
+interface MealLog {
+    id: string;
+    label: string;
+    price: number | null;
+    timeSlot: TimeSlot;
+    createdAt: Date;
+}
+
+interface ParsedIntent {
+    kind: "help" | "start" | "log" | "budget" | "menu" | "mood" | "preference" | "unknown";
+    payload?: any;
 }
 
 // ==========================================
-// [Layer 2] Infrastructure & Services
+// 2. Infrastructure
 // ==========================================
 
-class LineService {
-    private channelAccessToken: string;
-    private channelSecret: string;
-
-    constructor() {
-        this.channelAccessToken = Deno.env.get("LINE_CHANNEL_ACCESS_TOKEN")!;
-        this.channelSecret = Deno.env.get("LINE_CHANNEL_SECRET")!;
-    }
+class LineClient {
+    constructor(private token: string, private secret: string) { }
 
     async verifySignature(req: Request): Promise<boolean> {
         const signature = req.headers.get("x-line-signature");
         if (!signature) return false;
         const body = await req.clone().text();
-        const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(this.channelSecret), { name: "HMAC", hash: "SHA-256" }, false, ["verify"]);
+        const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(this.secret), { name: "HMAC", hash: "SHA-256" }, false, ["verify"]);
         return await crypto.subtle.verify("HMAC", key, Uint8Array.from(atob(signature), c => c.charCodeAt(0)), new TextEncoder().encode(body));
     }
 
-    async replyMessage(replyToken: string, messages: any[]) {
+    async reply(replyToken: string, messages: any[]) {
         await fetch("https://api.line.me/v2/bot/message/reply", {
             method: "POST",
-            headers: { "Content-Type": "application/json", Authorization: `Bearer ${this.channelAccessToken}` },
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${this.token}` },
             body: JSON.stringify({ replyToken, messages }),
         });
     }
 
-    async getMessageContent(messageId: string): Promise<ArrayBuffer> {
-        const res = await fetch(`https://api-data.line.me/v2/bot/message/${messageId}/content`, {
-            headers: { Authorization: `Bearer ${this.channelAccessToken}` },
-        });
-        return await res.arrayBuffer();
-    }
-
-    // ---- Rich Menu Logic (The "Magic" Setup) ----
-
-    async createRichMenu() {
-        // 1. Create Menu Object
+    async setupRichMenu() {
+        // Simplified Rich Menu Setup for "Grandparents"
         const menu = {
             size: { width: 2500, height: 843 },
             selected: true,
-            name: "Biyori Main Menu",
-            chatBarText: "メニューをひらく",
+            name: "Komeko Menu",
+            chatBarText: "メニュー",
             areas: [
-                { bounds: { x: 0, y: 0, width: 833, height: 843 }, action: { type: "message", text: "くさむしりした" } }, // Quick Log 1
-                { bounds: { x: 833, y: 0, width: 834, height: 843 }, action: { type: "message", text: "今どう？" } }, // Status
-                { bounds: { x: 1667, y: 0, width: 833, height: 843 }, action: { type: "message", text: "まとめ" } }  // Summary
+                { bounds: { x: 0, y: 0, width: 833, height: 843 }, action: { type: "message", text: "きょうのごはん" } },
+                { bounds: { x: 833, y: 0, width: 834, height: 843 }, action: { type: "message", text: "きょうのさいさん" } },
+                { bounds: { x: 1667, y: 0, width: 833, height: 843 }, action: { type: "message", text: "こんだて" } }
             ]
         };
-
-        // 2. Upload Menu
         const res = await fetch("https://api.line.me/v2/bot/richmenu", {
             method: "POST",
-            headers: { "Content-Type": "application/json", Authorization: `Bearer ${this.channelAccessToken}` },
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${this.token}` },
             body: JSON.stringify(menu)
         });
         const { richMenuId } = await res.json();
 
-        // 3. Upload Image (We'll use a placeholder color block image generated programmatically or just skip for this demo and assume user uploads one)
-        // For this single-file demo, we will skip the image upload step or use a default one if possible, 
-        // but Rich Menus REQUIRE an image. 
-        // TRICK: We will tell the user to upload an image manually or use a separate tool, 
-        // BUT for "Grandparents", we want it automatic.
-        // Let's assume we have a public URL to a default menu image.
-        const imageUrl = "https://placehold.co/2500x843/1DB446/FFFFFF/png?text=Log+Work+%7C+Status+%7C+Summary";
-        const imageBlob = await (await fetch(imageUrl)).blob();
-
+        // Upload default image (Placeholder)
+        const blob = await (await fetch("https://placehold.co/2500x843/FF9900/FFFFFF/png?text=Log+List+%7C+Budget+%7C+Menu")).blob();
         await fetch(`https://api-data.line.me/v2/bot/richmenu/${richMenuId}/content`, {
             method: "POST",
-            headers: { "Content-Type": "image/png", Authorization: `Bearer ${this.channelAccessToken}` },
-            body: imageBlob
+            headers: { "Content-Type": "image/png", Authorization: `Bearer ${this.token}` },
+            body: blob
         });
 
-        // 4. Set as Default
         await fetch(`https://api.line.me/v2/bot/user/all/richmenu/${richMenuId}`, {
             method: "POST",
-            headers: { Authorization: `Bearer ${this.channelAccessToken}` }
+            headers: { Authorization: `Bearer ${this.token}` }
         });
-
-        return richMenuId;
     }
 }
 
-class BiyoriPersona {
-    getCommonQuickReplies() {
-        return {
-            items: [
-                { type: "action", action: { type: "message", label: "🌱 くさむしり", text: "くさむしりした" } },
-                { type: "action", action: { type: "message", label: "💊 おくすり", text: "くすりのんだ" } },
-                { type: "action", action: { type: "message", label: "🚶 おさんぽ", text: "さんぽした" } },
-                { type: "action", action: { type: "message", label: "🧹 そうじ", text: "そうじした" } },
-                { type: "action", action: { type: "message", label: "👀 今どう？", text: "今どう？" } },
-            ]
+// ==========================================
+// 3. Repositories
+// ==========================================
+
+class UserRepository {
+    constructor(private sb: SupabaseClient) { }
+
+    async getByLineId(lineUserId: string): Promise<UserProfile | null> {
+        const { data } = await this.sb.from("users").select("*").eq("line_user_id", lineUserId).maybeSingle();
+        if (!data) return null;
+        return { id: data.id, lineUserId: data.line_user_id, nickname: data.nickname, monthlyBudget: data.monthly_budget };
+    }
+
+    async create(lineUserId: string, budget: number): Promise<UserProfile> {
+        const { data } = await this.sb.from("users").insert({ line_user_id: lineUserId, monthly_budget: budget }).select().single();
+        return { id: data.id, lineUserId: data.line_user_id, nickname: data.nickname, monthlyBudget: data.monthly_budget };
+    }
+}
+
+class MealRepository {
+    constructor(private sb: SupabaseClient) { }
+
+    async add(userId: string, groupId: string | null, label: string, price: number | null, timeSlot: TimeSlot, rawText: string) {
+        await this.sb.from("meals").insert({ user_id: userId, group_id: groupId, label, price, time_slot: timeSlot, raw_text: rawText });
+    }
+
+    async getToday(userId: string): Promise<MealLog[]> {
+        const today = new Date(); today.setHours(0, 0, 0, 0);
+        const { data } = await this.sb.from("meals").select("*").eq("user_id", userId).gte("created_at", today.toISOString());
+        return (data || []).map((d: any) => ({ id: d.id, label: d.label, price: d.price, timeSlot: d.time_slot, createdAt: new Date(d.created_at) }));
+    }
+
+    async getRecent(userId: string, limit: number = 10): Promise<MealLog[]> {
+        const { data } = await this.sb.from("meals").select("*").eq("user_id", userId).order("created_at", { ascending: false }).limit(limit);
+        return (data || []).map((d: any) => ({ id: d.id, label: d.label, price: d.price, timeSlot: d.time_slot, createdAt: new Date(d.created_at) }));
+    }
+}
+
+// ==========================================
+// 4. Services
+// ==========================================
+
+class BudgetService {
+    constructor(private mealRepo: MealRepository, private userRepo: UserRepository) { }
+
+    async checkDailyStatus(userId: string): Promise<{ total: number; budget: number; status: "safe" | "warning" | "danger" }> {
+        const user = (await this.userRepo.getByLineId(userId))!; // Assume user exists if calling this
+        const meals = await this.mealRepo.getToday(user.id);
+        const total = meals.reduce((sum, m) => sum + (m.price || 0), 0);
+        const dailyBudget = Math.round(user.monthlyBudget / 30);
+
+        let status: "safe" | "warning" | "danger" = "safe";
+        if (total > dailyBudget * 1.5) status = "danger";
+        else if (total > dailyBudget) status = "warning";
+
+        return { total, budget: dailyBudget, status };
+    }
+}
+
+class SuggestionEngine {
+    constructor(private mealRepo: MealRepository) { }
+
+    async suggest(userId: string): Promise<string[]> {
+        // Simple logic: Don't suggest what was eaten recently
+        const recent = await this.mealRepo.getRecent(userId, 5);
+        const recentLabels = new Set(recent.map(m => m.label));
+
+        const candidates = ["カレー", "パスタ", "ハンバーグ", "焼き魚", "うどん", "野菜炒め", "オムライス", "唐揚げ"];
+        const suggestions = candidates.filter(c => !recentLabels.has(c));
+
+        // Shuffle and pick 3
+        return suggestions.sort(() => 0.5 - Math.random()).slice(0, 3);
+    }
+}
+
+// ==========================================
+// 5. Persona Engine (Komeko)
+// ==========================================
+
+class KomekoPersona {
+    greet() {
+        return "やっほ〜！🍚 ごはん妖精のこめこだよ！\nいっしょに ごはんのこと 考えよ！\nまずは「はじめる」って送ってね！";
+    }
+
+    askBudget() {
+        return "わかった！✨\nじゃあ、1ヶ月の食費予算をおしえて？\n（例：30000）";
+    }
+
+    logAck(label: string, price: number | null, status: "safe" | "warning" | "danger") {
+        const comments = {
+            safe: ["いいかんじ！👍", "おいしそ〜😋", "メモメモ…✍️"],
+            warning: ["ちょっと使いすぎかも？💸", "あしたは節約かな？", "リッチだね〜✨"],
+            danger: ["お金使いすぎだよ〜！！😱", "こめ、しんぱい…", "お財布だいじょうぶ！？💸"]
         };
+        const c = comments[status][Math.floor(Math.random() * comments[status].length)];
+        const p = price ? `${price}円！` : "";
+        return `「${label}」だね！${p}\n${c}`;
     }
 
-    getLogResponse(text: string) {
-        return `「${text}」だね！\nちゃんと メモしたよ！✍️\nえらい えらい！💮`;
+    budgetReport(total: number, budget: number, status: string) {
+        const gauge = status === "danger" ? "🟥🟥🟥" : status === "warning" ? "🟨🟨🟩" : "🟩🟩🟩";
+        return `【きょうのさいさん】\n使ったお金：${total}円\n目安：${budget}円\n${gauge}\n\n${status === 'danger' ? 'これ以上はキケン！🙅‍♀️' : 'まだいけるよ！🙆‍♀️'}`;
+    }
+
+    menuSuggestion(menus: string[]) {
+        return `きょうのごはん、これどう？🍚\n\n1. ${menus[0]}\n2. ${menus[1]}\n3. ${menus[2]}\n\n「1がいい」とか教えてね！`;
     }
 }
 
-class FlexMessageBuilder {
-    // "Elderly Mode" - Large fonts, high contrast
-    static createLargeSummary(logs: { time: string; text: string }[]): any {
-        const rows = logs.map(log => ({
-            type: "box", layout: "horizontal", margin: "lg",
+// ==========================================
+// 6. UI Builder
+// ==========================================
+
+class FlexBuilder {
+    static receipt(meals: MealLog[], total: number) {
+        const rows = meals.map(m => ({
+            type: "box", layout: "horizontal",
             contents: [
-                { type: "text", text: log.time, size: "md", color: "#000000", flex: 2, weight: "bold" }, // Black text
-                { type: "text", text: log.text, size: "xl", color: "#000000", flex: 5, wrap: true, weight: "bold" } // Extra Large text
+                { type: "text", text: m.label, flex: 3, size: "sm", color: "#555555" },
+                { type: "text", text: m.price ? `¥${m.price}` : "-", flex: 1, align: "end", size: "sm", color: "#111111" }
             ]
         }));
 
         return {
-            type: "flex", altText: "きょうのまとめ",
+            type: "flex", altText: "きょうのレシート",
             contents: {
                 type: "bubble",
                 body: {
                     type: "box", layout: "vertical",
                     contents: [
-                        { type: "text", text: "📅 きょうの こと", size: "xxl", weight: "bold", color: "#1DB446", align: "center" },
-                        { type: "separator", margin: "lg" },
-                        ...rows,
-                        { type: "separator", margin: "lg" },
-                        { type: "text", text: `${logs.length}かい やったよ！`, size: "xl", align: "center", margin: "lg", weight: "bold" }
+                        { type: "text", text: "🧾 きょうのごはん", weight: "bold", size: "lg", align: "center" },
+                        { type: "separator", margin: "md" },
+                        { type: "box", layout: "vertical", margin: "md", contents: rows },
+                        { type: "separator", margin: "md" },
+                        {
+                            type: "box", layout: "horizontal", margin: "md",
+                            contents: [
+                                { type: "text", text: "合計", weight: "bold" },
+                                { type: "text", text: `¥${total}`, weight: "bold", align: "end", size: "xl", color: "#ff9900" }
+                            ]
+                        }
                     ]
                 }
             }
@@ -169,99 +266,155 @@ class FlexMessageBuilder {
 }
 
 // ==========================================
-// [Layer 3] Main Logic
+// 7. Intent Parser
+// ==========================================
+
+class IntentParser {
+    parse(text: string): ParsedIntent {
+        const t = text.trim();
+        if (t === "はじめる") return { kind: "start" };
+        if (t === "ヘルプ") return { kind: "help" };
+        if (t === "きょうのごはん") return { kind: "log" };
+        if (t === "きょうのさいさん") return { kind: "budget" };
+        if (t === "こんだて") return { kind: "menu" };
+        if (t === "メニュー作って") return { kind: "unknown", payload: "setup_menu" }; // Magic command
+
+        // Log Pattern: "Lunch Curry 800"
+        // Heuristic: Contains number -> Price. Rest -> Label.
+        const priceMatch = t.match(/(\d+)(円|yen)?/);
+        if (priceMatch || t.length > 0) {
+            const price = priceMatch ? parseInt(priceMatch[1]) : null;
+            const label = t.replace(/(\d+)(円|yen)?/, "").trim();
+            return { kind: "log", payload: { label, price } };
+        }
+
+        return { kind: "unknown" };
+    }
+}
+
+// ==========================================
+// 8. Controller (Main Loop)
 // ==========================================
 
 class BotApp {
-    private supabase: SupabaseClient;
-    private line: LineService;
-    private persona: BiyoriPersona;
+    private sb: SupabaseClient;
+    private line: LineClient;
+    private userRepo: UserRepository;
+    private mealRepo: MealRepository;
+    private budgetService: BudgetService;
+    private suggestionEngine: SuggestionEngine;
+    private persona: KomekoPersona;
+    private parser: IntentParser;
 
     constructor() {
-        this.supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!);
-        this.line = new LineService();
-        this.persona = new BiyoriPersona();
+        this.sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!);
+        this.line = new LineClient(Deno.env.get("LINE_CHANNEL_ACCESS_TOKEN")!, Deno.env.get("LINE_CHANNEL_SECRET")!);
+        this.userRepo = new UserRepository(this.sb);
+        this.mealRepo = new MealRepository(this.sb);
+        this.budgetService = new BudgetService(this.mealRepo, this.userRepo);
+        this.suggestionEngine = new SuggestionEngine(this.mealRepo);
+        this.persona = new KomekoPersona();
+        this.parser = new IntentParser();
     }
 
     async handleRequest(req: Request): Promise<Response> {
-        try {
-            if (!(await this.line.verifySignature(req))) return new Response("Invalid signature", { status: 401 });
-            const body = await req.json();
-            for (const event of body.events ?? []) {
-                if (event.type === "message" && event.replyToken) await this.processEvent(event);
+        if (req.method !== "POST") return new Response("Method Not Allowed", { status: 405 });
+        if (!(await this.line.verifySignature(req))) return new Response("Unauthorized", { status: 401 });
+
+        const body = await req.json();
+        const events = body.events || [];
+
+        for (const event of events) {
+            if (event.type === "message" && event.message.type === "text") {
+                await this.handleTextEvent(event);
             }
-            return new Response("OK", { status: 200 });
-        } catch (e) {
-            console.error(e);
-            return new Response("Error", { status: 500 });
         }
+        return new Response("OK", { status: 200 });
     }
 
-    private async processEvent(event: LineEvent) {
+    private async handleTextEvent(event: any) {
         const userId = event.source.userId;
-        const groupId = event.source.groupId ?? event.source.userId;
-        if (!userId || !groupId) return;
+        const replyToken = event.replyToken;
+        const text = event.message.text;
+        const intent = this.parser.parse(text);
 
-        // Magic Command for Admin: Setup Rich Menu
-        if (event.message?.text === "メニュー作って") {
-            await this.line.createRichMenu();
-            await this.line.replyMessage(event.replyToken!, [{ type: "text", text: "メニューをつくったよ！\nしたのほうを みてみて！👀" }]);
+        // Magic Command
+        if (intent.payload === "setup_menu") {
+            await this.line.setupRichMenu();
+            await this.line.reply(replyToken, [{ type: "text", text: "メニューをつくったよ！✨" }]);
             return;
         }
 
-        // Context
-        const ctx = await this.getOrCreateContext(groupId, userId);
+        // Get User
+        let user = await this.userRepo.getByLineId(userId);
 
-        // Handle Inputs
-        if (event.message?.type === "image") {
-            // ... (Image logic same as before) ...
-            await this.line.replyMessage(event.replyToken!, [{ type: "text", text: "しゃしん！📸\n大きく うつってるね！\n保存したよ！", quickReply: this.persona.getCommonQuickReplies() }]);
+        // Onboarding Flow
+        if (intent.kind === "start") {
+            await this.line.reply(replyToken, [{ type: "text", text: this.persona.greet() }]);
+            return;
         }
-        else if (event.message?.type === "audio") {
-            // Voice Memo Support!
-            await this.line.replyMessage(event.replyToken!, [{ type: "text", text: "こえのメモ だね！🎤\nきいたよ！保存しておくね！", quickReply: this.persona.getCommonQuickReplies() }]);
-            // TODO: Upload audio to storage
+        if (!user && text.match(/^\d+$/)) {
+            // Assume setting budget
+            user = await this.userRepo.create(userId, parseInt(text));
+            await this.line.reply(replyToken, [{ type: "text", text: `予算 ${text}円でメモしたよ！\nこれからよろしくね！🍚` }]);
+            return;
         }
-        else if (event.message?.type === "text") {
-            const text = event.message.text;
+        if (!user) {
+            await this.line.reply(replyToken, [{ type: "text", text: this.persona.greet() }]);
+            return;
+        }
 
-            if (text.includes("まとめ")) {
-                const logs = await this.getTodayLogs(ctx.groupDbId);
-                await this.line.replyMessage(event.replyToken!, [FlexMessageBuilder.createLargeSummary(logs)]);
-            } else if (text.includes("今どう")) {
-                const logs = await this.getTodayLogs(ctx.groupDbId);
-                await this.line.replyMessage(event.replyToken!, [{ type: "text", text: `いま ${logs.length}かい やってるよ！`, quickReply: this.persona.getCommonQuickReplies() }]);
-            } else {
-                // Log it
-                await this.saveActivity(ctx, text);
-                await this.line.replyMessage(event.replyToken!, [{
-                    type: "text",
-                    text: this.persona.getLogResponse(text),
-                    quickReply: this.persona.getCommonQuickReplies() // Always show suggestions
-                }]);
+        // Main Logic
+        switch (intent.kind) {
+            case "log": {
+                if (intent.payload) {
+                    // It's a log entry
+                    const { label, price } = intent.payload;
+                    const timeSlot = this.estimateTimeSlot();
+                    await this.mealRepo.add(user.id, null, label, price, timeSlot, text);
+
+                    const { total, budget, status } = await this.budgetService.checkDailyStatus(userId);
+                    await this.line.reply(replyToken, [{ type: "text", text: this.persona.logAck(label, price, status) }]);
+                } else {
+                    // "Today's meals" request
+                    const meals = await this.mealRepo.getToday(user.id);
+                    const { total } = await this.budgetService.checkDailyStatus(userId);
+                    await this.line.reply(replyToken, [FlexBuilder.receipt(meals, total)]);
+                }
+                break;
             }
+            case "budget": {
+                const { total, budget, status } = await this.budgetService.checkDailyStatus(userId);
+                await this.line.reply(replyToken, [{ type: "text", text: this.persona.budgetReport(total, budget, status) }]);
+                break;
+            }
+            case "menu": {
+                const menus = await this.suggestionEngine.suggest(user.id);
+                await this.line.reply(replyToken, [{ type: "text", text: this.persona.menuSuggestion(menus) }]);
+                break;
+            }
+            case "help":
+                await this.line.reply(replyToken, [{ type: "text", text: "「昼 カレー 800」みたいに送ってね！\n「きょうのさいさん」で予算チェックできるよ！" }]);
+                break;
+            default:
+                // Fallback: Treat as log if it looks like food? For now just echo help.
+                // await this.line.reply(replyToken, [{ type: "text", text: "ん？ごはんのこと？\n「ヘルプ」って送ってみて！" }]);
+                break;
         }
     }
 
-    // ... (Database Helpers same as before) ...
-    private async getOrCreateContext(lineGroupId: string, lineUserId: string): Promise<BotContext> {
-        let { data: group } = await this.supabase.from("groups").select("*").eq("line_group_id", lineGroupId).maybeSingle();
-        if (!group) { const { data } = await this.supabase.from("groups").insert({ line_group_id: lineGroupId, name: "未設定" }).select().single(); group = data; }
-        let { data: member } = await this.supabase.from("members").select("*").eq("group_id", group.id).eq("line_user_id", lineUserId).maybeSingle();
-        if (!member) { const { data } = await this.supabase.from("members").insert({ group_id: group.id, line_user_id: lineUserId }).select().single(); member = data; }
-        return { groupId: lineGroupId, groupDbId: group.id, memberDbId: member.id, displayName: member.display_name };
-    }
-
-    private async saveActivity(ctx: BotContext, text: string) {
-        await this.supabase.from("activities").insert({ group_id: ctx.groupDbId, member_id: ctx.memberDbId, raw_text: text, activity_type: "log", expires_at: new Date(Date.now() + 43200000).toISOString() });
-    }
-
-    private async getTodayLogs(groupDbId: string) {
-        const today = new Date(); today.setHours(0, 0, 0, 0);
-        const { data } = await this.supabase.from("activities").select("*").eq("group_id", groupDbId).gte("created_at", today.toISOString()).order("created_at", { ascending: true });
-        return (data || []).map((l: any) => ({ time: new Date(l.created_at).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }), text: l.raw_text }));
+    private estimateTimeSlot(): TimeSlot {
+        const hour = new Date().getHours() + 9; // JST approximation
+        if (hour < 11) return "morning";
+        if (hour < 15) return "noon";
+        if (hour < 18) return "snack";
+        return "evening";
     }
 }
+
+// ==========================================
+// 9. Entry Point
+// ==========================================
 
 const bot = new BotApp();
 serve((req) => bot.handleRequest(req));
