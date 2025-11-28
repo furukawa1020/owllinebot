@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>びよりさんの作業ログ（リアルタイム）</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: sans-serif; background: #fdfdf0; color: #4a4a4a; padding: 20px; }
+        h1 { color: #88aa00; font-size: 1.5rem; }
+        #logs { list-style: none; padding: 0; }
+        .log-item { background: white; padding: 15px; margin-bottom: 10px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); display: flex; align-items: center; animation: popIn 0.3s ease-out; }
+        .time { font-weight: bold; color: #88aa00; margin-right: 15px; }
+        .content { font-size: 1.1rem; }
+        @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    </style>
+</head>
+<body>
+    <h1>🌱 今日の作業ログ（リアルタイム）</h1>
+    <ul id="logs">
+        <!-- Logs will appear here -->
+    </ul>
+
+    <script>
+        // REPLACE WITH YOUR SUPABASE URL AND ANON KEY
+        const SUPABASE_URL = "YOUR_SUPABASE_URL";
+        const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
+
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const logsList = document.getElementById('logs');
+
+        function addLog(text, time) {
+            const li = document.createElement('li');
+            li.className = 'log-item';
+            const t = new Date(time);
+            const timeStr = `${String(t.getHours()).padStart(2, '0')}:${String(t.getMinutes()).padStart(2, '0')}`;
+            li.innerHTML = `<span class="time">${timeStr}</span><span class="content">${text}</span>`;
+            logsList.prepend(li);
+        }
+
+        // 1. Load initial data
+        async function loadInitial() {
+            const today = new Date();
+            today.setHours(0,0,0,0);
+            const { data } = await supabase
+                .from('activities')
+                .select('*')
+                .gte('created_at', today.toISOString())
+                .order('created_at', { ascending: true });
+            
+            if (data) {
+                data.forEach(row => addLog(row.raw_text, row.created_at));
+            }
+        }
+
+        // 2. Subscribe to Realtime changes
+        supabase
+            .channel('public:activities')
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'activities' }, payload => {
+                console.log('New log!', payload);
+                addLog(payload.new.raw_text, payload.new.created_at);
+            })
+            .subscribe();
+
+        loadInitial();
+    </script>
+</body>
+</html>
