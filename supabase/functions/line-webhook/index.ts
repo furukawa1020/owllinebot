@@ -10,68 +10,41 @@ import { LineEvent } from "../_shared/src/types/index.ts";
 // Repositories
 import { GroupRepository } from "../_shared/src/repositories/GroupRepository.ts";
 import { ActivityRepository } from "../_shared/src/repositories/ActivityRepository.ts";
+const isSignatureValid = await lineService.verifySignature(req);
+if (!isSignatureValid) {
+    return new Response("Invalid signature", { status: 401 });
+}
 
-// Services
-import { LineService } from "../_shared/src/services/LineService.ts";
-import { CommandParser } from "../_shared/src/services/CommandParser.ts";
-import { BiyoriPersona } from "../_shared/src/services/BiyoriPersona.ts";
-import { ActivityService } from "../_shared/src/services/ActivityService.ts";
+// 2. Parse Body
+const body = await req.json();
+const events: LineEvent[] = body.events ?? [];
 
-// ---- Dependency Injection Setup ----
-const supabase = getSupabaseClient();
-const groupRepo = new GroupRepository(supabase);
-const activityRepo = new ActivityRepository(supabase);
-
-const lineService = new LineService();
-const parser = new CommandParser();
-const persona = new BiyoriPersona();
-
-const activityService = new ActivityService(
-    groupRepo,
-    activityRepo,
-    parser,
-    persona
-);
-
-// ---- Main Server ----
-serve(async (req) => {
+// 3. Event Loop
+for (const event of events) {
     try {
-        // 1. Signature Verification
-        const isSignatureValid = await lineService.verifySignature(req);
-        if (!isSignatureValid) {
-            return new Response("Invalid signature", { status: 401 });
+        // We only handle message events for now
+        if (event.type !== "message" || !event.replyToken) continue;
+
+        // Delegate business logic to ActivityService
+        const replyText = await activityService.handleEvent(event);
+
+        // Send Reply
+        if (replyText) {
+            await lineService.replyMessage(event.replyToken, [
+                { type: "text", text: replyText },
+            ]);
         }
+    } catch (err) {
+        console.error("Error processing event:", err);
+        // In a real enterprise app, we might want to log this to a dedicated error monitoring service (Sentry etc.)
+        // For now, we just log to Supabase Edge Function logs.
+    }
+}
 
-        // 2. Parse Body
-        const body = await req.json();
-        const events: LineEvent[] = body.events ?? [];
-
-        // 3. Event Loop
-        for (const event of events) {
-            try {
-                // We only handle message events for now
-                if (event.type !== "message" || !event.replyToken) continue;
-
-                // Delegate business logic to ActivityService
-                const replyText = await activityService.handleEvent(event);
-
-                // Send Reply
-                if (replyText) {
-                    await lineService.replyMessage(event.replyToken, [
-                        { type: "text", text: replyText },
-                    ]);
-                }
-            } catch (err) {
-                console.error("Error processing event:", err);
-                // In a real enterprise app, we might want to log this to a dedicated error monitoring service (Sentry etc.)
-                // For now, we just log to Supabase Edge Function logs.
-            }
-        }
-
-        return new Response("OK", { status: 200 });
+return new Response("OK", { status: 200 });
 
     } catch (err) {
-        console.error("Fatal error:", err);
-        return new Response("Internal Server Error", { status: 500 });
-    }
+    console.error("Fatal error:", err);
+    return new Response("Internal Server Error", { status: 500 });
+}
 });
