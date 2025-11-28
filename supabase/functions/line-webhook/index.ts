@@ -21,7 +21,7 @@ type OnboardingStatus = "INIT" | "NAME" | "PAYDAY" | "INCOME" | "FIXED_COSTS" | 
 type FinancialHealthRank = "S" | "A" | "B" | "C" | "D" | "F";
 type TimeSlot = "morning" | "noon" | "evening" | "snack" | "late_night";
 type ToddlerMood = "HAPPY" | "NORMAL" | "SAD" | "TANTRUM" | "SLEEPY" | "HYPER";
-type IngredientTag = "veggie" | "meat" | "fish" | "carb" | "sweet" | "bitter" | "yucky" | "yummy" | "expensive" | "cheap" | "alcohol" | "fruit" | "dairy" | "seasoning";
+type IngredientTag = "veggie" | "meat" | "fish" | "carb" | "sweet" | "bitter" | "yucky" | "yummy" | "expensive" | "cheap" | "alcohol" | "fruit" | "dairy" | "seasoning" | "healthy" | "light" | "hard" | "spicy" | "salty" | "heavy" | "junk";
 
 interface UserProfile {
     id: string;
@@ -291,13 +291,117 @@ class IngredientDatabase {
 
 class RecipeDatabase {
     static readonly recipes: MenuSuggestion[] = [
-        // [DATA_SECTION_RECIPES]
+        // --- Rank F (Poverty / Survival) ---
+        { label: "もやしナムル", ingredients: ["もやし"], reason: "やすい！はやい！おいしい！", isStrict: true, price: 40, calories: 60 },
+        { label: "しおむすび", ingredients: ["ごはん"], reason: "シンプルがいちばん。", isStrict: true, price: 50, calories: 250 },
+        { label: "すどーふ", ingredients: ["豆腐"], reason: "おしょうゆかけてたべてね。", isStrict: true, price: 50, calories: 80 },
+        { label: "みず", ingredients: ["お水"], reason: "おかねないときは、これ。", isStrict: true, price: 0, calories: 0 },
+        { label: "くうき", ingredients: [], reason: "がまんしてね。", isStrict: true, price: 0, calories: 0 },
+        { label: "もやしいため", ingredients: ["もやし"], reason: "しゃきしゃきだよ！", isStrict: true, price: 30, calories: 50 },
+        { label: "とうふごはん", ingredients: ["ごはん", "豆腐"], reason: "かさ増し！", isStrict: true, price: 100, calories: 350 },
+        { label: "パンのみ", ingredients: ["パン"], reason: "よくかんでたべてね。", isStrict: true, price: 30, calories: 150 },
+        { label: "うどん（す）", ingredients: ["うどん"], reason: "ぐなしうどん。", isStrict: true, price: 40, calories: 200 },
+        { label: "はんぶんこ", ingredients: [], reason: "あしたのぶんものこしてね。", isStrict: true, price: 0, calories: 0 },
+        { label: "だんじき", ingredients: [], reason: "いぶくろをやすめよう。", isStrict: true, price: 0, calories: 0 },
+        { label: "キャベツのしん", ingredients: ["キャベツ"], reason: "あまくておいしいよ？", isStrict: true, price: 0, calories: 10 },
+        { label: "パンのみみ", ingredients: ["パン"], reason: "パンやさんでもらえるかも？", isStrict: true, price: 0, calories: 100 },
+        { label: "おさゆ", ingredients: ["お水"], reason: "からだがあたたまるよ。", isStrict: true, price: 0, calories: 0 },
+        { label: "しおなめ", ingredients: [], reason: "ミネラルほきゅう！", isStrict: true, price: 1, calories: 0 },
+
+        // --- Rank C/D (Budget / Warning) ---
+        { label: "なっとうごはん", ingredients: ["ごはん", "なっとう"], reason: "えいようまんてん！", isStrict: true, price: 80, calories: 350 },
+        { label: "たまごかけごはん", ingredients: ["ごはん", "たまご"], reason: "TKG！", isStrict: true, price: 70, calories: 330 },
+        { label: "ちくわきゅうり", ingredients: ["ちくわ", "きゅうり"], reason: "おつまみにもなるよ。", isStrict: true, price: 100, calories: 150 },
+        { label: "とうふステーキ", ingredients: ["豆腐"], reason: "お肉みたい！", isStrict: true, price: 60, calories: 120 },
+        { label: "もやしチャンプルー", ingredients: ["もやし", "豆腐", "たまご"], reason: "ボリューミー！", isStrict: true, price: 150, calories: 300 },
+        { label: "とりむねソテー", ingredients: ["とりむねにく"], reason: "ヘルシーでやすい！", isStrict: true, price: 100, calories: 200 },
+        { label: "やさいいため", ingredients: ["キャベツ", "もやし", "にんじん"], reason: "おやさいとろうね。", isStrict: true, price: 150, calories: 200 },
+        { label: "きのこパスタ", ingredients: ["パスタ", "しめじ", "えのき"], reason: "きのこはやすいよ！", isStrict: true, price: 150, calories: 400 },
+        { label: "おちゃづけ", ingredients: ["ごはん"], reason: "サラサラたべれるね。", isStrict: true, price: 60, calories: 260 },
+        { label: "カップメン", ingredients: ["ラーメン"], reason: "たまにはいいけど…", isStrict: true, price: 150, calories: 400 },
+
+        // --- Rank B (Normal) ---
+        { label: "ぶたキムチ", ingredients: ["ぶたこま", "キムチ"], reason: "ごはんがすすむよ！", isStrict: false, price: 300, calories: 400 },
+        { label: "おやこどん", ingredients: ["とりももにく", "たまご", "ごはん"], reason: "とろとろでおいしいね。", isStrict: false, price: 350, calories: 600 },
+        { label: "カレーライス", ingredients: ["とりももにく", "にんじん", "じゃがいも", "ごはん"], reason: "みんなだいすき！", isStrict: false, price: 400, calories: 800 },
+        { label: "さばのみそに", ingredients: ["さば"], reason: "おさかな、からだにいいよ。", isStrict: false, price: 200, calories: 300 },
+        { label: "オムライス", ingredients: ["たまご", "ごはん", "とりももにく"], reason: "ケチャップでおえかきしよう！", isStrict: false, price: 300, calories: 700 },
+        { label: "ハンバーグ", ingredients: ["ひきにく", "たまねぎ"], reason: "じゅわ〜ってなるよ！", isStrict: false, price: 400, calories: 600 },
+        { label: "しょうがやき", ingredients: ["ぶたロース", "しょうが"], reason: "スタミナつくよ！", isStrict: false, price: 400, calories: 500 },
+        { label: "からあげ", ingredients: ["とりももにく"], reason: "カリカリジューシー！", isStrict: false, price: 300, calories: 600 },
+        { label: "にくじゃが", ingredients: ["ぎゅうこま", "じゃがいも", "にんじん"], reason: "ほっこりするね。", isStrict: false, price: 400, calories: 500 },
+        { label: "やきそば", ingredients: ["やきそば", "キャベツ", "ぶたこま"], reason: "おまつりみたい！", isStrict: false, price: 200, calories: 500 },
+        { label: "チャーハン", ingredients: ["ごはん", "たまご", "チャーシュー"], reason: "パラパラにできるかな？", isStrict: false, price: 200, calories: 600 },
+        { label: "ぎょうざ", ingredients: ["ひきにく", "キャベツ", "にら"], reason: "パリパリ！", isStrict: false, price: 300, calories: 400 },
+        { label: "クリームシチュー", ingredients: ["とりももにく", "じゃがいも", "にんじん", "ぎゅうにゅう"], reason: "あったまるね〜。", isStrict: false, price: 400, calories: 600 },
+        { label: "グラタン", ingredients: ["マカロニ", "チーズ", "ぎゅうにゅう"], reason: "あつあつだよ！", isStrict: false, price: 400, calories: 600 },
+        { label: "サンドイッチ", ingredients: ["パン", "ハム", "レタス"], reason: "ピクニック気分！", isStrict: false, price: 300, calories: 400 },
+
+        // --- Rank A (Good) ---
+        { label: "とんかつ", ingredients: ["ぶたロース"], reason: "サクサク！", isStrict: false, price: 800, calories: 800 },
+        { label: "てんぷら", ingredients: ["えび", "なす", "かぼちゃ"], reason: "おみせみたい！", isStrict: false, price: 1000, calories: 700 },
+        { label: "さしみ", ingredients: ["まぐろ", "サーモン"], reason: "しんせんだね！", isStrict: false, price: 1000, calories: 300 },
+        { label: "ローストビーフ", ingredients: ["ぎゅうももにく"], reason: "おしゃれ〜！", isStrict: false, price: 1200, calories: 400 },
+        { label: "ビーフシチュー", ingredients: ["ぎゅうにく", "じゃがいも"], reason: "ごちそうだね！", isStrict: false, price: 1200, calories: 800 },
+        { label: "パエリア", ingredients: ["えび", "あさり", "ごはん"], reason: "カラフルだね！", isStrict: false, price: 1500, calories: 600 },
+        { label: "アクアパッツァ", ingredients: ["たい", "あさり", "トマト"], reason: "イタリアン！", isStrict: false, price: 1500, calories: 500 },
+        { label: "チーズフォンデュ", ingredients: ["チーズ", "パン", "ブロッコリー"], reason: "とろ〜り！", isStrict: false, price: 1500, calories: 600 },
+
+        // --- Rank S (Rich / Luxury) ---
+        { label: "うなじゅう", ingredients: ["うなぎ", "ごはん"], reason: "ごうかだね〜！", isStrict: false, price: 3000, calories: 800 },
+        { label: "すきやき", ingredients: ["ぎゅうにく", "とうふ", "ねぎ"], reason: "おにく、とろける〜！", isStrict: false, price: 2000, calories: 900 },
+        { label: "おすし", ingredients: ["まぐろ", "サーモン", "いくら"], reason: "くるくるまわらないやつ！", isStrict: false, price: 4000, calories: 600 },
+        { label: "ステーキ", ingredients: ["ステーキ"], reason: "にくじるブシャー！", isStrict: false, price: 3000, calories: 800 },
+        { label: "フレンチコース", ingredients: [], reason: "ナイフとフォークつかうの？", isStrict: false, price: 10000, calories: 1000 },
+        { label: "かいせきりょうり", ingredients: [], reason: "おとなだね〜。", isStrict: false, price: 10000, calories: 800 },
+        { label: "しゃぶしゃぶ", ingredients: ["ぎゅうにく"], reason: "さっぱりおいしい！", isStrict: false, price: 3000, calories: 700 },
+        { label: "ふぐ", ingredients: ["ふぐ"], reason: "プクプク！", isStrict: false, price: 8000, calories: 300 },
+        { label: "カニなべ", ingredients: ["かに"], reason: "カニさん！", isStrict: false, price: 5000, calories: 400 },
+        { label: "やきにく", ingredients: ["カルビ", "ロース", "タン"], reason: "ジュージュー！", isStrict: false, price: 5000, calories: 1000 },
     ];
 }
 
 class DialogueDatabase {
     static readonly patterns: Record<string, string[]> = {
-        // [DATA_SECTION_DIALOGUES]
+        // --- Greetings ---
+        "GREET_MORNING": ["おはよ！あさごはんだよ！", "むにゃ…おはよぉ…", "あさだよ！おきてー！", "たいようさん、でてるよ！", "あさごはんは、なに？", "ねむいけど…おきた！", "きょうもいちにち、がんばろ！", "あさだよー！かんかんかん！", "おふとん、でたくない…", "あさごはん、たべる？"],
+        "GREET_NOON": ["おひるだね！なにする？", "おなかすいたー！", "ごはんのじかんだよ！", "ランチタイムだね！", "おべんとう？", "きゅうしょく？", "おひるごはん、たのしみ！", "ぐーぐーなった！", "もうおひる？はやいね！", "なにたべるの？"],
+        "GREET_EVENING": ["こんばんは！きょうもがんばったね！", "おかえりー！", "よるごはんは？", "おつかれさま！", "ゆうやけ、きれいだった？", "おなかすいたねー！", "ごはん、まだ？", "きょうはなにがあった？", "おふろはいる？", "パパ、ママ、おかえり！"],
+        "GREET_LATE": ["…まだおきてるの？", "もうねるじかんだよ…", "ふぁぁ…ねむい…", "おばけでるよ？", "はやくねないと…", "あした、おきれないよ？", "こめこはもうねるね…", "よふかしは、めっ！だよ。", "おめめ、ぱっちり？", "しずかだね…"],
+
+        // --- Financial Ranks (Pure Text) ---
+        "RANK_S": ["すごい！おさいふパンパンだね！", "えへへ、リッチだね〜！", "なんでもかえちゃうよ！", "おうさまみたい！", "キラキラしてる！", "ちょきん、たくさん！", "あんしんだね！", "ごほうび、かっちゃう？", "こめこ、うれしいな！", "すごいすごい！"],
+        "RANK_A": ["いいかんじ！そのちょうし！", "おりこうさんだね！", "あんしんだね〜。", "よゆうだね！", "さすがだね！", "このままいこう！", "ニコニコだね！", "じゅんちょうだね！", "えらいえらい！", "はなまるあげる！"],
+        "RANK_B": ["ふつうだね。ゆだんしちゃだめだよ？", "これからだよ！", "ちゃんとちょきんできてる？", "きをぬかないでね。", "コツコツがだいじ。", "ふつうがいちばん。", "まあまあだね。", "これからどうする？", "おかいもの、きをつけて。", "ためいきはダメだよ。"],
+        "RANK_C": ["ちょっとつかいすぎかも…", "おさいふ、かるくなってきた？", "がまんもだいじだよ。", "きいろしんごう！", "むだづかいしてない？", "レシートみた？", "ちょっとしんぱい…", "おやつ、がまんする？", "へってるよ…", "きをつけてね。"],
+        "RANK_D": ["めっ！つかいすぎ！", "もうだめかも…", "あしたから、もやしね。", "あかいしんごう！", "ピーポーピーポー！", "どうするの？", "こめこ、かなしい…", "おさいふ、ないない…", "ピンチだよ！", "たすけてー！"],
+        "RANK_F": ["…おさいふ、からっぽ。", "…ごはん、ないの？", "…ひもじいよぉ…", "…おみず、おいしいね。", "…くうき、たべる？", "…もう、おわり？", "…ぐすん。", "…なにもない。", "…さむいよぉ。", "…バイバイ…？"],
+
+        // --- Specific Foods ---
+        "FOOD_VEGGIE": ["おやさい！えらい！", "ピーマン…たべれるの？すごい！", "シャキシャキしておいしいね！", "みどりいろ！", "からだにいいんだよ！", "えらいね〜！", "にんじんさん！", "もぐもぐ…おいしい！", "おやさい、だいすき！（うそ）", "がんばってたべたね！"],
+        "FOOD_MEAT": ["おにく！やったー！", "ジューシーだね！", "おにくたべると、げんきでる！", "ニク！ニク！", "おいしいね〜！", "ごちそうだね！", "パワーアップ！", "おかわり！", "おにく、さいこう！", "やきにくたべたい！"],
+        "FOOD_FISH": ["おさかな！かしこくなるよ！", "ほねにきをつけてね。", "おさかなすき？", "スイイスイ！", "うみのあじ！", "さかなクン！", "おいしいおさかな！", "やきざかな！", "おさしみ！", "カルシウム！"],
+        "FOOD_SWEET": ["あまいもの！べつばらだよね！", "むしばにならないでね。", "おいしい〜！しあわせ〜！", "あまーい！", "とろける〜！", "もういっこ！", "おやつタイム！", "3じのおやつ！", "しあわせのあじ！", "やめられないね！"],
+        "FOOD_JUNK": ["…またそれ？", "からだにわるいよ？", "たまにならいいけど…", "ジャンクだね〜。", "カロリーすごいよ？", "あぶらっこいね。", "おいしいけど…", "めっ！だよ。", "おやさいもたべてね。", "ほどほどにね。"],
+        "FOOD_WEIRD": ["…なにそれ？", "たべれるの？", "こめこ、それしらない…", "へんなの！", "おいしいの？", "チャレンジャーだね。", "びっくり！", "はじめてみた！", "…じーっ。", "においは？"],
+        "FOOD_EXPENSIVE": ["…！たかーい！", "それ、ほんとうにいるの？", "おさいふ、だいじょうぶ？", "セレブだね！", "ごうかだね！", "きんぴか！", "もったいない…？", "あじわってたべてね。", "しゃしんとろう！", "じまんしよう！"],
+        "FOOD_CHEAP": ["やすい！えらい！", "せつやくだね！", "かしこい！", "おかいどくだね！", "お得！", "もやし？", "やすいのはいいこと！", "たすかるね〜。", "やりくりじょうず！", "そのちょうし！"],
+        "FOOD_BITTER": ["…にがい。", "おとなのあじ？", "うぇ…", "にがいよぉ…", "コーヒー？", "ゴーヤ？", "がまんしてね。", "おくすり？", "しぶいね。", "こめこはパス。"],
+        "FOOD_SPICY": ["からい！", "ひーはー！", "おみず！おみず！", "あかいよ！", "からいのすき？", "あせかいた？", "した、いたい…", "ドラゴンみたい！", "カプサイシン！", "げきから！"],
+
+        // --- Contextual ---
+        "CTX_LATE_RAMEN": ["よるのラーメン…おいしいけど…", "あした、おかおパンパンになるよ？", "…はんぶんこする？", "ゆうわくだね…", "いけないことしてる…", "背徳感…", "スープはのまないでね。", "あしたはせつやくね。", "…おいしそう。", "ズルズル！"],
+        "CTX_EXPENSIVE": ["…！たかーい！", "それ、ほんとうにいるの？", "おさいふ、だいじょうぶ？", "清水の舞台から…？", "勇気あるね！", "後悔しない？", "…だいじにしてね。", "…返品できないよ？", "…ドキドキする。", "…すごい。"],
+        "CTX_STREAK": ["まいにちえらいね！", "つづいてる！すごい！", "こめこもがんばる！", "きろく、こうしん！", "そのちょうし！", "みならいたいな。", "すごいすごい！", "パーフェクト！", "あしたもよろしくね！", "いっしょにがんばろ！"],
+        "CTX_BROKE_EATING": ["おかねないのに…たべるの？", "…それ、借金？", "…もやしじゃないの？", "…ゆうきあるね。", "…だいじょうぶ？", "…しらないよ？", "…ごちそう…？", "…あしたはどうするの？", "…サバイバルだね。", "…たくましいね。"],
+        "CTX_PAYDAY": ["おきゅうりょうび！", "やったー！", "おかねはいった！", "ごほうび！", "でも、むだづかいはダメだよ。", "まずはちょきん！", "うれしいね！", "おしごと、おつかれさま！", "リッチだね！", "なににつかう？"],
+        "CTX_BANKRUPTCY": ["…はさん。", "…おわり。", "…ゲームオーバー。", "…リセットする？", "…どうしよう。", "…わらえないよ。", "…こめこ、家出するね。", "…さようなら。", "…なんてね。", "…復活できる？"],
+        "CTX_SEASON_SPRING": ["はるだね！", "さくら、さいた？", "あったかいね。", "おはなみしたい！", "だんごたべたい！", "新生活だね。", "ワクワクするね。", "花粉症…？", "ポカポカ。", "ねむくなるね。"],
+        "CTX_SEASON_SUMMER": ["なつだね！", "あついよぉ…", "アイスたべたい！", "うみいきたい！", "プール！", "すいかわり！", "セミがないてる。", "ゆうだち、くるかな？", "かきごおり！", "そうめん！"],
+        "CTX_SEASON_AUTUMN": ["あきだね！", "おいしいものいっぱい！", "さんま！", "くり！", "さつまいも！", "こうよう、きれい。", "どくしょのあき。", "スポーツのあき。", "しょくよくのあき！", "すずしくなったね。"],
+        "CTX_SEASON_WINTER": ["ふゆだね！", "さむいよぉ…", "こたつはいりたい。", "みかんたべたい。", "ゆき、ふるかな？", "クリスマス！", "おしょうがつ！", "ナベ！", "あったかくしてね。", "カゼひかないでね。"],
+        "CTX_RANDOM_LUCKY": ["ラッキー！", "いいことあった？", "ついてるね！", "えへへ。", "なんかいいかんじ。", "ほし、みつけた！", "よつばのクローバー！", "だい吉！", "キラキラ！", "ハッピー！"],
+        "CTX_RANDOM_UNLUCKY": ["ドンマイ。", "そんなひもあるよ。", "げんきだして。", "よしよし。", "あしたはいいことあるよ。", "あめ、やむよ。", "こめこがいるよ。", "ぎゅーってしてあげる。", "なかないで。", "リセット！"],
     };
 
     static get(key: string): string {
