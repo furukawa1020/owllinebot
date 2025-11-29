@@ -904,6 +904,11 @@ class BotApp {
         }
         // -----------------------------
 
+        // --- Prepare Extra Messages ---
+        const extraMessages: any[] = [];
+        if (seasonalMsg) extraMessages.push({ type: "text", text: seasonalMsg });
+        if (eventMsg) extraMessages.push(eventMsg);
+
         let intent: ParsedIntent = { kind: "unknown" };
         if (text === "はじめる") intent = { kind: "start" };
         else if (text === "きょうのごはん") intent = { kind: "log" };
@@ -939,13 +944,16 @@ class BotApp {
                         if (info.tags.includes("veggie")) baseMsg = DialogueDatabase.get("FOOD_VEGGIE");
                         else if (info.tags.includes("meat")) baseMsg = DialogueDatabase.get("FOOD_MEAT");
                         else if (info.tags.includes("sweet")) baseMsg = DialogueDatabase.get("FOOD_SWEET");
+                        else if (info.tags.includes("seasoning")) baseMsg = DialogueDatabase.get("REACT_SPICE");
+                        else if (info.tags.includes("junk")) baseMsg = DialogueDatabase.get("REACT_CONBINI");
+                        else if (info.tags.includes("alcohol")) baseMsg = DialogueDatabase.get("REACT_ALCOHOL");
                     }
                     if (status.healthRank === "F") baseMsg = DialogueDatabase.get("CTX_BROKE_EATING");
 
                     const replyText = ToddlerTranslator.translate(baseMsg, mood);
-                    await this.line.reply(event.replyToken, [{ type: "text", text: `「${intent.payload.label}」だね！\n${replyText}\n(XP +${xpGain})` }]);
+                    await this.line.reply(event.replyToken, [...extraMessages, { type: "text", text: `「${intent.payload.label}」だね！\n${replyText}\n(XP +${xpGain})` }]);
                 } else {
-                    await this.line.reply(event.replyToken, [{ type: "text", text: "りれきは、まだみれないの。ごめんね。" }]);
+                    await this.line.reply(event.replyToken, [...extraMessages, { type: "text", text: "りれきは、まだみれないの。ごめんね。" }]);
                 }
                 break;
             case "budget":
@@ -953,17 +961,17 @@ class BotApp {
                 const mood = ToddlerTranslator.getMood(status.healthRank, this.estimateTimeSlot());
                 const rawComment = DialogueDatabase.get(`RANK_${status.healthRank}`);
                 const comment = ToddlerTranslator.translate(rawComment, mood);
-                await this.line.reply(event.replyToken, [DashboardBuilder.build(status, user), { type: "text", text: comment }]);
+                await this.line.reply(event.replyToken, [...extraMessages, DashboardBuilder.build(status, user), { type: "text", text: comment }]);
                 break;
             case "menu":
                 const s = await this.financialEngine.simulate(user);
                 const suggestions = s.healthRank === "F"
                     ? RecipeDatabase.recipes.filter(r => r.isStrict).slice(0, 3)
                     : RecipeDatabase.recipes.sort(() => 0.5 - Math.random()).slice(0, 3);
-                await this.line.reply(event.replyToken, [MenuBuilder.build(suggestions)]);
+                await this.line.reply(event.replyToken, [...extraMessages, MenuBuilder.build(suggestions)]);
                 break;
             case "status":
-                await this.line.reply(event.replyToken, [{ type: "text", text: `【ステータス】\nLv.${user.level} ${user.title}\nXP: ${user.xp}\nStreak: ${user.streak}にち` }]);
+                await this.line.reply(event.replyToken, [...extraMessages, { type: "text", text: `【ステータス】\nLv.${user.level} ${user.title}\nXP: ${user.xp}\nStreak: ${user.streak}にち` }]);
                 break;
         }
     }
